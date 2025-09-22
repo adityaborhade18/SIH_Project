@@ -11,6 +11,7 @@ const Loginn = () => {
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
   const [showUserlogin, setShowUserlogin] = useState(false); 
+
   const submithandler = async (event) => {
     event.preventDefault();
     try {
@@ -22,10 +23,11 @@ const Loginn = () => {
       if (data.success) {
         setUser(data.user); // local state
         toast.success(data.message || "Success!");
-        setShowUserlogin(false);
         navigate('/');
+        setShowUserlogin(false);
+       
       } else {
-        toast.error(data.message);
+        toast.error("else part");
       }
     } catch (error) {
       toast.error(error.response?.data?.message || error.message);
@@ -33,7 +35,7 @@ const Loginn = () => {
     }
   };
 
-//   if (!showUserlogin) return null; // hide modal if false
+  // if (!showUserlogin) return null; // hide modal if false
 
   return (
     <div
