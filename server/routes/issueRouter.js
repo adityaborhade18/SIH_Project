@@ -1,20 +1,10 @@
-import express from "express"
+import express from "express";
 import { createIssue, getAllIssue } from "../controllers/issueController.js";
-import multer from "multer";
+import upload from "../config/multer.js"; 
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  }
-});
-const upload = multer({ storage });
+const issueRouter = express.Router();
 
-const issueRouter=express.Router();
-
-issueRouter.post('/createissue',upload.single("image"),createIssue);
-issueRouter.get('/getallissue',getAllIssue);
+issueRouter.post('/createissue', upload.single("image"), createIssue);
+issueRouter.get('/getallissue', getAllIssue);
 
 export default issueRouter;

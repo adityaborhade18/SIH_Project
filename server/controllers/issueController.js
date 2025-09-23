@@ -1,5 +1,3 @@
-import express from "express";
-
 import Issue from "../models/issue.js";
 
 // POST: Report issue
@@ -11,14 +9,18 @@ export const createIssue = async (req, res) => {
       title,
       description,
       location,
-      image: req.file ? req.file.path : null,
+      image: req.file ? req.file.path : null, 
     });
 
     await issue.save();
-    res
-      .status(201)
-      .json({ success: true, message: "Issue reported successfully!", issue });
+
+    res.status(201).json({
+      success: true,
+      message: "Issue reported successfully!",
+      issue,
+    });
   } catch (error) {
+    console.error("Error creating issue:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -27,12 +29,9 @@ export const createIssue = async (req, res) => {
 export const getAllIssue = async (req, res) => {
   try {
     const issues = await Issue.find().sort({ createdAt: -1 });
-    res.json({ success: true, issues });
+    res.status(200).json({ success: true, issues });
   } catch (error) {
+    console.error("Error fetching issues:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
-
-
-
