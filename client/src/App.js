@@ -9,6 +9,7 @@ import { Toaster } from 'react-hot-toast';
 import HomePage from './pages/HomePage';
 import ReportIssue from './pages/ReportIssue';
 import IssueTracker from './pages/IssueTracker';
+import IssueDetails from './pages/IssueDetails';
 
 import ForgotPassword from './pages/ForgotPassword';
 import AdminDashboard from './pages/admin/Dashboard';
@@ -72,7 +73,7 @@ function App() {
               <Route path="/user" element={<UserPage />} />
               <Route path="/report-issue" element={<ReportIssue />} />
               <Route path="/track-issue" element={<IssueTracker />} />
-              
+              <Route path="/issue/:id" element={<IssueDetails />} />
               <Route path="/loginn" element={<Loginn />} />
              
               <Route path="/forgot-password" element={<ForgotPassword />} />

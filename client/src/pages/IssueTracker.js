@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   Container,
   Typography,
@@ -19,9 +20,9 @@ import {
   CircularProgress,
   useMediaQuery,
   useTheme,
-  Divider,
   IconButton,
   InputAdornment,
+  Divider,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -33,47 +34,7 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 
-// Mock data - in a real app, this would come from an API
-const mockIssues = [
-  {
-    id: 'REP-1001',
-    title: 'Pothole on Main Street',
-    description: 'Large pothole near the intersection of Main Street and 1st Avenue, causing traffic issues.',
-    category: 'Pothole',
-    status: 'In Progress',
-    priority: 'High',
-    dateReported: '2023-11-15T09:30:00',
-    lastUpdated: '2023-11-16T14:20:00',
-    location: 'Main Street & 1st Avenue',
-    image: 'https://example.com/images/pothole.jpg',
-  },
-  {
-    id: 'REP-1002',
-    title: 'Broken Streetlight',
-    description: 'Streetlight not working on Oak Street between 5th and 6th Avenue.',
-    category: 'Broken Streetlight',
-    status: 'Reported',
-    priority: 'Medium',
-    dateReported: '2023-11-16T18:45:00',
-    lastUpdated: '2023-11-16T18:45:00',
-    location: 'Oak Street, Block 5-6',
-    image: 'https://example.com/images/streetlight.jpg',
-  },
-  {
-    id: 'REP-1003',
-    title: 'Garbage Overflow',
-    description: 'Public trash bin is overflowing near Central Park entrance.',
-    category: 'Garbage Collection',
-    status: 'Completed',
-    priority: 'Low',
-    dateReported: '2023-11-14T11:15:00',
-    lastUpdated: '2023-11-15T10:30:00',
-    location: 'Central Park Main Entrance',
-    image: 'https://example.com/images/trash.jpg',
-  },
-];
-
-const statuses = ['All', 'Reported', 'In Progress', 'Resolved', 'Completed'];
+const statuses = ['All', 'Pending', 'In Progress', 'Resolved', 'Completed'];
 const priorities = ['All', 'Low', 'Medium', 'High'];
 const sortOptions = [
   { value: 'newest', label: 'Newest First' },
@@ -90,32 +51,32 @@ const IssueTracker = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
-  const itemsPerPage = 5;
-  
+  const itemsPerPage = 6;
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
 
-  // In a real app, this would be an API call
+  // Fetch issues from API
   useEffect(() => {
     const fetchIssues = async () => {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 800));
-        setIssues(mockIssues);
-      } catch (error) {
-        console.error('Error fetching issues:', error);
+        setLoading(true);
+        const res = await axios.get('http://localhost:5000/api/user/getallissue');
+        setIssues(res.data.issues || []);
+      } catch (err) {
+        console.error('Error fetching issues:', err);
+        setIssues([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchIssues();
   }, []);
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
-    setPage(1); // Reset to first page when searching
+    setPage(1);
   };
 
   const handleStatusFilterChange = (event) => {
@@ -138,234 +99,262 @@ const IssueTracker = () => {
 
   const handleRefresh = () => {
     setLoading(true);
-    // In a real app, this would refetch data
-    setTimeout(() => {
-      setLoading(false);
-    }, 800);
+    // Refetch data
+    const fetchIssues = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/user/getallissue');
+        setIssues(res.data.issues || []);
+      } catch (err) {
+        console.error('Error fetching issues:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchIssues();
   };
 
   const getPriorityColor = (priority) => {
-    switch (priority.toLowerCase()) {
-      case 'high':
-        return 'error';
-      case 'medium':
-        return 'warning';
-      case 'low':
-        return 'info';
-      default:
-        return 'default';
+    switch (priority?.toLowerCase()) {
+      case 'high': return 'error';
+      case 'medium': return 'warning';
+      case 'low': return 'info';
+      default: return 'default';
     }
   };
 
   const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case 'reported':
-        return 'primary';
-      case 'in progress':
-        return 'secondary';
-      case 'completed':
-        return 'success';
+    switch (status?.toLowerCase()) {
+      case 'pending': return 'primary';
+      case 'in progress': return 'secondary';
       case 'resolved':
-        return 'success';
-      default:
-        return 'default';
+      case 'completed': return 'success';
+      default: return 'default';
     }
   };
 
-  // Filter and sort issues
+  // Correctly parse location data - FIXED for your specific data structure
+  const parseLocationData = (locationString) => {
+    try {
+      const loc = JSON.parse(locationString);
+      
+      if (loc.coordinates && Array.isArray(loc.coordinates) && loc.coordinates.length === 2) {
+        // Your data is stored as [longitude, latitude] - we need to swap to [latitude, longitude]
+        const [longitude, latitude] = loc.coordinates;
+        
+        return {
+          ...loc,
+          coordinates: [latitude, longitude], // Correct order: [lat, lng]
+          latitude: latitude,
+          longitude: longitude,
+          // Use the address from the data if available, or create one
+          address: loc.address || `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`
+        };
+      }
+      
+      return loc;
+    } catch (e) {
+      console.warn('Error parsing location data:', e);
+      return {};
+    }
+  };
+
+  // Filter, search, sort
   const filteredIssues = issues
-    .filter((issue) => {
-      const matchesSearch = issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         issue.description.toLowerCase().includes(searchTerm.toLowerCase());
+    .filter(issue => {
+      const matchesSearch =
+        issue.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        issue.description?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'All' || issue.status === statusFilter;
       const matchesPriority = priorityFilter === 'All' || issue.priority === priorityFilter;
-      
       return matchesSearch && matchesStatus && matchesPriority;
     })
     .sort((a, b) => {
-      if (sortBy === 'newest') {
-        return new Date(b.dateReported) - new Date(a.dateReported);
-      } else if (sortBy === 'oldest') {
-        return new Date(a.dateReported) - new Date(b.dateReported);
-      } else if (sortBy === 'priority') {
-        const priorityOrder = { 'High': 3, 'Medium': 2, 'Low': 1 };
-        return priorityOrder[b.priority] - priorityOrder[a.priority];
+      if (sortBy === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
+      if (sortBy === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
+      if (sortBy === 'priority') {
+        const order = { High: 3, Medium: 2, Low: 1 };
+        return (order[b.priority] || 0) - (order[a.priority] || 0);
       }
       return 0;
     });
 
   // Pagination
   const count = Math.ceil(filteredIssues.length / itemsPerPage);
-  const paginatedIssues = filteredIssues.slice(
-    (page - 1) * itemsPerPage,
-    page * itemsPerPage
+  const paginatedIssues = filteredIssues.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
+  if (loading) return (
+    <Box display="flex" justifyContent="center" alignItems="center" minHeight="70vh">
+      <CircularProgress size={60} thickness={4} />
+    </Box>
   );
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 600 }}>
-          Track Issues
-        </Typography>
+    <Container maxWidth="lg" sx={{ py: 6 }}>
+      {/* Header */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={6}>
+        <Box>
+          <Typography variant="h4" fontWeight={700} gutterBottom>
+            Track Issues
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Monitor and manage all reported issues in one place
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           color="primary"
+          size="large"
           onClick={() => navigate('/report-issue')}
-          sx={{ ml: 2 }}
+          sx={{
+            minWidth: 180,
+            height: 48,
+            fontWeight: 600,
+            boxShadow: 2,
+            '&:hover': {
+              boxShadow: 4,
+            }
+          }}
         >
           Report New Issue
         </Button>
       </Box>
 
-      {/* Search and Filter Bar */}
-      <Box sx={{ mb: 4 }}>
-        <Box display="flex" flexWrap="wrap" gap={2} mb={2}>
+      {/* Search and Filters */}
+      <Box sx={{ mb: 5 }}>
+        <Box display="flex" flexWrap="wrap" gap={3} alignItems="center" mb={3}>
           <TextField
-            placeholder="Search issues..."
+            placeholder="Search issues by title or description..."
             variant="outlined"
-            size="small"
+            size="medium"
             value={searchTerm}
             onChange={handleSearch}
-            sx={{ flexGrow: 1, maxWidth: 500 }}
+            sx={{
+              flexGrow: 1,
+              maxWidth: 500,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+              }
+            }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
                   <SearchIcon color="action" />
                 </InputAdornment>
-              ),
+              )
             }}
           />
-          
+
           {!isMobile && (
-            <>
-              <FormControl variant="outlined" size="small" sx={{ minWidth: 180 }}>
+            <Box display="flex" gap={2} alignItems="center">
+              <FormControl size="medium" sx={{ minWidth: 180 }}>
                 <InputLabel>Status</InputLabel>
                 <Select
                   value={statusFilter}
                   onChange={handleStatusFilterChange}
                   label="Status"
+                  sx={{ borderRadius: 2 }}
                 >
-                  <MenuItem value="All">All Statuses</MenuItem>
-                  {statuses.filter(s => s !== 'All').map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
+                  {statuses.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
                 </Select>
               </FormControl>
 
-              <FormControl variant="outlined" size="small" sx={{ minWidth: 150 }}>
+              <FormControl size="medium" sx={{ minWidth: 150 }}>
                 <InputLabel>Priority</InputLabel>
                 <Select
                   value={priorityFilter}
                   onChange={handlePriorityFilterChange}
                   label="Priority"
+                  sx={{ borderRadius: 2 }}
                 >
-                  <MenuItem value="All">All Priorities</MenuItem>
-                  {priorities.filter(p => p !== 'All').map((priority) => (
-                    <MenuItem key={priority} value={priority}>
-                      {priority}
-                    </MenuItem>
-                  ))}
+                  {priorities.map(p => <MenuItem key={p} value={p}>{p}</MenuItem>)}
                 </Select>
               </FormControl>
 
-              <FormControl variant="outlined" size="small" sx={{ minWidth: 180 }}>
+              <FormControl size="medium" sx={{ minWidth: 180 }}>
                 <InputLabel>Sort By</InputLabel>
                 <Select
                   value={sortBy}
                   onChange={handleSortChange}
                   label="Sort By"
-                  startAdornment={
-                    <InputAdornment position="start">
-                      <SortIcon />
-                    </InputAdornment>
-                  }
+                  sx={{ borderRadius: 2 }}
                 >
-                  {sortOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
+                  {sortOptions.map(o => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
                 </Select>
               </FormControl>
-            </>
+
+              <IconButton
+                onClick={handleRefresh}
+                title="Refresh"
+                sx={{
+                  bgcolor: 'background.default',
+                  border: 1,
+                  borderColor: 'divider',
+                  '&:hover': {
+                    bgcolor: 'action.hover',
+                  }
+                }}
+              >
+                <RefreshIcon />
+              </IconButton>
+            </Box>
           )}
 
           {isMobile && (
-            <Button
-              variant="outlined"
-              startIcon={<FilterListIcon />}
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              Filters
-            </Button>
+            <Box display="flex" gap={1}>
+              <Button
+                variant="outlined"
+                startIcon={<FilterListIcon />}
+                onClick={() => setShowFilters(!showFilters)}
+                sx={{ minWidth: 120 }}
+              >
+                Filters
+              </Button>
+              <IconButton
+                onClick={handleRefresh}
+                title="Refresh"
+                sx={{
+                  border: 1,
+                  borderColor: 'divider',
+                }}
+              >
+                <RefreshIcon />
+              </IconButton>
+            </Box>
           )}
-
-          <IconButton onClick={handleRefresh} title="Refresh">
-            <RefreshIcon />
-          </IconButton>
         </Box>
 
-        {/* Mobile Filters */}
         {isMobile && showFilters && (
-          <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1, mb: 2, border: '1px solid #eee' }}>
-            <Grid container spacing={2}>
+          <Box sx={{
+            p: 3,
+            bgcolor: 'background.paper',
+            borderRadius: 2,
+            mb: 3,
+            border: 1,
+            borderColor: 'divider',
+            boxShadow: 1
+          }}>
+            <Grid container spacing={3}>
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="small" variant="outlined">
+                <FormControl fullWidth size="medium">
                   <InputLabel>Status</InputLabel>
-                  <Select
-                    value={statusFilter}
-                    onChange={handleStatusFilterChange}
-                    label="Status"
-                  >
-                    <MenuItem value="All">All Statuses</MenuItem>
-                    {statuses.filter(s => s !== 'All').map((status) => (
-                      <MenuItem key={status} value={status}>
-                        {status}
-                      </MenuItem>
-                    ))}
+                  <Select value={statusFilter} onChange={handleStatusFilterChange} label="Status">
+                    {statuses.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
                   </Select>
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="small" variant="outlined">
+                <FormControl fullWidth size="medium">
                   <InputLabel>Priority</InputLabel>
-                  <Select
-                    value={priorityFilter}
-                    onChange={handlePriorityFilterChange}
-                    label="Priority"
-                  >
-                    <MenuItem value="All">All Priorities</MenuItem>
-                    {priorities.filter(p => p !== 'All').map((priority) => (
-                      <MenuItem key={priority} value={priority}>
-                        {priority}
-                      </MenuItem>
-                    ))}
+                  <Select value={priorityFilter} onChange={handlePriorityFilterChange} label="Priority">
+                    {priorities.map(p => <MenuItem key={p} value={p}>{p}</MenuItem>)}
                   </Select>
                 </FormControl>
               </Grid>
               <Grid item xs={12}>
-                <FormControl fullWidth size="small" variant="outlined">
+                <FormControl fullWidth size="medium">
                   <InputLabel>Sort By</InputLabel>
-                  <Select
-                    value={sortBy}
-                    onChange={handleSortChange}
-                    label="Sort By"
-                  >
-                    {sortOptions.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
+                  <Select value={sortBy} onChange={handleSortChange} label="Sort By">
+                    {sortOptions.map(o => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}
                   </Select>
                 </FormControl>
               </Grid>
@@ -374,87 +363,166 @@ const IssueTracker = () => {
         )}
       </Box>
 
-      {/* Results Count */}
-      <Box mb={2}>
-        <Typography variant="body2" color="textSecondary">
-          Showing {paginatedIssues.length > 0 ? (page - 1) * itemsPerPage + 1 : 0} - 
+      {/* Result Count and Stats */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="body1" color="text.secondary" fontWeight={500}>
+          Showing {paginatedIssues.length > 0 ? (page - 1) * itemsPerPage + 1 : 0} -
           {Math.min(page * itemsPerPage, filteredIssues.length)} of {filteredIssues.length} issues
         </Typography>
+        {filteredIssues.length > 0 && (
+          <Chip
+            label={`${filteredIssues.length} total`}
+            size="small"
+            variant="outlined"
+            color="primary"
+          />
+        )}
       </Box>
 
+      <Divider sx={{ mb: 4 }} />
+
       {/* Issues List */}
-      <Box mb={4}>
+      <Box mb={6}>
         {paginatedIssues.length > 0 ? (
-          paginatedIssues.map((issue) => (
-            <Card key={issue.id} sx={{ mb: 2, '&:hover': { boxShadow: 3 } }}>
-              <CardContent>
-                <Box display="flex" justifyContent="space-between" flexWrap="wrap">
-                  <Box>
-                    <Typography variant="h6" component="h2" gutterBottom>
-                      {issue.title}
-                    </Typography>
-                    <Box display="flex" flexWrap="wrap" gap={1} mb={1.5}>
-                      <Chip
-                        label={issue.status}
-                        size="small"
-                        color={getStatusColor(issue.status)}
-                        variant="outlined"
-                      />
-                      <Chip
-                        label={issue.priority}
-                        size="small"
-                        color={getPriorityColor(issue.priority)}
-                        variant="outlined"
-                      />
-                      <Chip
-                        label={issue.category}
-                        size="small"
-                        variant="outlined"
-                      />
-                    </Box>
-                  </Box>
-                  <Typography variant="body2" color="textSecondary">
-                    #{issue.id}
-                  </Typography>
-                </Box>
+          <Grid container spacing={3}>
+            {paginatedIssues.map(issue => {
+              const loc = parseLocationData(issue.location);
 
-                <Typography variant="body2" color="textSecondary" paragraph>
-                  {issue.description.length > 200
-                    ? `${issue.description.substring(0, 200)}...`
-                    : issue.description}
-                </Typography>
+              return (
+                <Grid item xs={12} key={issue._id}>
+                  <Card
+                    sx={{
+                      borderRadius: 3,
+                      boxShadow: 2,
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        boxShadow: 6,
+                        transform: 'translateY(-2px)',
+                      }
+                    }}
+                  >
+                    <CardContent sx={{ p: 4 }}>
+                      {/* Header Section */}
+                      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2.5}>
+                        <Box flex={1}>
+                          <Typography
+                            variant="h6"
+                            fontWeight={600}
+                            gutterBottom
+                            sx={{
+                              lineHeight: 1.3,
+                              mb: 1.5
+                            }}
+                          >
+                            {issue.title}
+                          </Typography>
 
-                <Box display="flex" flexWrap="wrap" gap={2} mt={2}>
-                  <Box display="flex" alignItems="center">
-                    <LocationIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
-                    <Typography variant="caption" color="textSecondary">
-                      {issue.location}
-                    </Typography>
-                  </Box>
-                  <Box display="flex" alignItems="center">
-                    <CalendarIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
-                    <Typography variant="caption" color="textSecondary">
-                      Reported on {format(new Date(issue.dateReported), 'MMM d, yyyy')}
-                    </Typography>
-                  </Box>
-                </Box>
-              </CardContent>
-              <CardActions sx={{ justifyContent: 'flex-end', pt: 0 }}>
-                <Button 
-                  size="small" 
-                  onClick={() => navigate(`/issue/${issue.id}`)}
-                >
-                  View Details
-                </Button>
-              </CardActions>
-            </Card>
-          ))
+                          <Box display="flex" gap={1.5} flexWrap="wrap" mb={2}>
+                            <Chip
+                              label={issue.status}
+                              size="medium"
+                              color={getStatusColor(issue.status)}
+                              variant="filled"
+                              sx={{ fontWeight: 600 }}
+                            />
+                            <Chip
+                              label={issue.priority}
+                              size="medium"
+                              color={getPriorityColor(issue.priority)}
+                              variant="filled"
+                              sx={{ fontWeight: 600 }}
+                            />
+                          </Box>
+                        </Box>
+
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{
+                            bgcolor: 'background.default',
+                            px: 1.5,
+                            py: 0.5,
+                            borderRadius: 1,
+                            fontWeight: 500,
+                            ml: 2
+                          }}
+                        >
+                          #{issue._id?.slice(-8).toUpperCase()}
+                        </Typography>
+                      </Box>
+
+                      {/* Description */}
+                      <Typography
+                        variant="body1"
+                        color="text.secondary"
+                        paragraph
+                        sx={{
+                          lineHeight: 1.6,
+                          mb: 3
+                        }}
+                      >
+                        {issue.description.length > 250
+                          ? `${issue.description.substring(0, 250)}...`
+                          : issue.description
+                        }
+                      </Typography>
+
+                      {/* Metadata */}
+                      <Box display="flex" flexWrap="wrap" gap={3} alignItems="center">
+                        {loc.address && (
+                          <Box display="flex" alignItems="center">
+                            <LocationIcon fontSize="small" color="action" sx={{ mr: 1 }} />
+                            <Typography variant="body2" color="text.secondary">
+                              {loc.address}
+                            </Typography>
+                          </Box>
+                        )}
+
+                        <Box display="flex" alignItems="center">
+                          <CalendarIcon fontSize="small" color="action" sx={{ mr: 1 }} />
+                          <Typography variant="body2" color="text.secondary">
+                            Reported on {format(new Date(issue.createdAt), 'MMM d, yyyy')}
+                          </Typography>
+                        </Box>
+
+                        {/* Optional: Display coordinates for verification */}
+                        {process.env.NODE_ENV === 'development' && loc.coordinates && (
+                          <Box display="flex" alignItems="center">
+                            <LocationIcon fontSize="small" color="action" sx={{ mr: 1 }} />
+                            <Typography variant="caption" color="text.secondary">
+                              Corrected: Lat: {loc.latitude?.toFixed(6)}, Lng: {loc.longitude?.toFixed(6)}
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
+                    </CardContent>
+
+                    <CardActions sx={{
+                      px: 4,
+                      pb: 3,
+                      pt: 0,
+                      justifyContent: 'flex-end'
+                    }}>
+                      <Button
+                        variant="outlined"
+                        size="medium"
+                        onClick={() => navigate(`/issue/${issue._id}`)}
+                        sx={{ minWidth: 120, fontWeight: 600, borderRadius: 2 }}
+                      >
+                        View Details
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
         ) : (
-          <Box textAlign="center" py={6}>
-            <Typography variant="h6" color="textSecondary" gutterBottom>
+          <Box textAlign="center" py={10}>
+            <Typography variant="h5" color="text.secondary" gutterBottom fontWeight={500}>
               No issues found
             </Typography>
-            <Typography variant="body2" color="textSecondary">
+            <Typography variant="body1" color="text.secondary">
               Try adjusting your search or filter criteria
             </Typography>
           </Box>
@@ -462,15 +530,22 @@ const IssueTracker = () => {
       </Box>
 
       {/* Pagination */}
-      {filteredIssues.length > 0 && (
-        <Box display="flex" justifyContent="center" mt={4}>
+      {filteredIssues.length > itemsPerPage && (
+        <Box display="flex" justifyContent="center" mt={6}>
           <Pagination
             count={count}
             page={page}
             onChange={handlePageChange}
             color="primary"
+            size="large"
             showFirstButton
             showLastButton
+            sx={{
+              '& .MuiPaginationItem-root': {
+                borderRadius: 2,
+                fontWeight: 600,
+              }
+            }}
           />
         </Box>
       )}
