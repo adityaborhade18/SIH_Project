@@ -1,12 +1,17 @@
 import mongoose from "mongoose";
 
 const issueSchema = new mongoose.Schema({
-  title: { type: String, required: true },      
+  title: { type: String, required: true },
   description: { type: String, required: true },
-  image: { type: String },                      
+  image: { type: String },
   location: { type: String, required: true },
-  status: { type: String, default: "Pending" }, 
+  status: { type: String, default: "Pending" },
+  priority: { 
+    type: String, 
+    enum: ["Low", "Medium", "High"],  
+    default: "Low"                    
+  },
   createdAt: { type: Date, default: Date.now }
-},{timestamps:true});
+}, { timestamps: true });
 
 export default mongoose.model("Issue", issueSchema);
