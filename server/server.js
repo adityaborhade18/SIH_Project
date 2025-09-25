@@ -1,8 +1,11 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
+import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import userRouter from "./routes/userRouter.js";
 import issueRouter from "./routes/issueRouter.js";
+
 
 const app = express();
 
@@ -18,6 +21,8 @@ app.use(cors({origin:allowedOrigin,credentials:true}));
 app.use(express.json()); 
 app.use("/uploads", express.static("uploads"));
 
+app.use(cookieParser());
+
 // Routes
 app.get("/", (req, res) => {
   res.send("Hello from server!");
@@ -25,6 +30,8 @@ app.get("/", (req, res) => {
 
 app.use('/api/user', userRouter);
 app.use('/api/user', issueRouter);
+
+
 
 
 
