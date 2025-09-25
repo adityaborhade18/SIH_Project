@@ -246,6 +246,8 @@ const Loginn = ({ show, onClose }) => {
     try {
       const { data } = await axios.post(`/api/user/${state}`, { name, email, password });
       if (data.success) {
+        const token=console.log(data.token);
+        localStorage.setItem("token", data.token);
         toast.success(data.message || "Success!");
         navigate('/');
         onClose();

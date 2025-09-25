@@ -67,7 +67,7 @@ function App() {
         <Toaster />
         <div className="app" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <Navbar />
-          <main style={{ flex: 1, paddingTop: '10px' }}>
+          <main style={{ flex: 1 }}>
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/user" element={<UserPage />} />

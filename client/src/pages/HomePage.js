@@ -663,39 +663,41 @@
 // export default HomePage;
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const CivicIssueSystem = () => {
+  const navigate = useNavigate();
   // Civic issues data with images and descriptions
   const civicIssues = [
     {
       id: 1,
       title: "Road Maintenance",
       description: "Report potholes, road damage, and traffic hazards",
-      image: "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+      image: "https://images.unsplash.com/flagged/photo-1572213426852-0e4ed8f41ff6?q=80&w=874&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
     },
     {
       id: 2,
       title: "Public Sanitation",
       description: "Report garbage accumulation, blocked drains, and sanitation issues",
-      image: "https://images.unsplash.com/photo-1550147760-44c9966d6bc7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+      image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSIW5n1WDGdiX_X3GMG7fm3oie70ojNaSd6ww&s"
     },
     {
       id: 3,
       title: "Street Lighting",
       description: "Report malfunctioning street lights and dark areas",
-      image: "https://images.unsplash.com/photo-1518837695005-2083093ee35b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-    },
+      image: "https://media.istockphoto.com/id/929942316/photo/old-highway-with-holes-and-snow-landscape-road-potholes-in-cloudy-winter-weather-concept.webp?a=1&b=1&s=612x612&w=0&k=20&c=MSPEPn_sV1Sr0zUtj5XzUNSeN5D4J8mc42xoWI01MgE="
+    },  
     {
       id: 4,
       title: "Public Parks",
       description: "Report issues with public parks, playgrounds, and green spaces",
-      image: "https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+      image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSfChcPTW8stZT3PQm3_RQf-u4GZ8cm1mcfFQ&s"
     },
     {
       id: 5,
       title: "Water Supply",
       description: "Report water leakage, contamination, and supply issues",
-      image: "https://images.unsplash.com/photo-1545560810-99dce9c0b872?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+      image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTsPLIoth3skIGorO0EncnEySNGEe84PAIunQ&s"
     }
   ];
 
@@ -773,7 +775,7 @@ const CivicIssueSystem = () => {
             {civicIssues[currentSlide].description}
           </p>
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 animate-fade-in-up animation-delay-400">
-            <button className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105">
+            <button onClick={()=>navigate('/report-issue')}  className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105">
               Report an Issue
             </button>
             <button className="px-8 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors transform hover:scale-105">
