@@ -87,7 +87,7 @@
 //                 </Button>
 //               </Box>
 //             </Grid>
-           
+
 //           </Grid>
 //         </Container>
 //       </Box>
@@ -419,7 +419,7 @@
 //                 </Box>
 //               </Fade>
 //             </Grid>
-            
+
 //             <Grid item xs={12} md={6}>
 //               <Slide direction="up" in timeout={800}>
 //                 <Paper
@@ -443,7 +443,7 @@
 //                       {autoPlay ? <Pause /> : <PlayArrow />}
 //                     </IconButton>
 //                   </Box>
-                  
+
 //                   <Box sx={{ position: 'relative', mb: 3 }}>
 //                     <Box
 //                       component="img"
@@ -480,14 +480,14 @@
 //                       />
 //                     </Box>
 //                   </Box>
-                  
+
 //                   <Typography variant="h6" fontWeight={600} gutterBottom>
 //                     {dynamicIssues[currentIssueIndex].title}
 //                   </Typography>
 //                   <Typography variant="body2" color="text.secondary" paragraph>
 //                     {dynamicIssues[currentIssueIndex].location}
 //                   </Typography>
-                  
+
 //                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 //                     <Chip
 //                       label={`${dynamicIssues[currentIssueIndex].votes} Votes`}
@@ -663,6 +663,7 @@
 // export default HomePage;
 
 import React, { useState, useEffect } from 'react';
+import { Link } from "react-router-dom"
 
 const CivicIssueSystem = () => {
   // Civic issues data with images and descriptions
@@ -708,7 +709,7 @@ const CivicIssueSystem = () => {
     const interval = setInterval(() => {
       handleNextSlide();
     }, 5000);
-    
+
     return () => clearInterval(interval);
   }, [currentSlide]);
 
@@ -742,20 +743,19 @@ const CivicIssueSystem = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50">
       {/* Header */}
-     
-     
+
+
       {/* Hero Section with Slideshow */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         {/* Background Slideshow */}
         <div className="absolute inset-0 z-0">
           {civicIssues.map((issue, index) => (
-            <div 
+            <div
               key={issue.id}
-              className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${
-                index === currentSlide ? 'opacity-100' : 'opacity-0'
-              }`}
+              className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${index === currentSlide ? 'opacity-100' : 'opacity-0'
+                }`}
             >
-              <div 
+              <div
                 className="w-full h-full bg-cover bg-center"
                 style={{ backgroundImage: `url(${issue.image})` }}
               ></div>
@@ -773,9 +773,12 @@ const CivicIssueSystem = () => {
             {civicIssues[currentSlide].description}
           </p>
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 animate-fade-in-up animation-delay-400">
-            <button className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105">
-              Report an Issue
-            </button>
+
+            <Link to="/report-issue">
+              <button className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105">
+                Report an Issue
+              </button>
+            </Link>
             <button className="px-8 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors transform hover:scale-105">
               View Issues Map
             </button>
@@ -783,7 +786,7 @@ const CivicIssueSystem = () => {
         </div>
 
         {/* Slideshow Controls */}
-        <button 
+        <button
           onClick={handlePrevSlide}
           className="absolute left-4 z-10 p-3 rounded-full bg-white bg-opacity-20 text-white hover:bg-opacity-30 transition-all"
         >
@@ -791,7 +794,7 @@ const CivicIssueSystem = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <button 
+        <button
           onClick={handleNextSlide}
           className="absolute right-4 z-10 p-3 rounded-full bg-white bg-opacity-20 text-white hover:bg-opacity-30 transition-all"
         >
@@ -806,9 +809,8 @@ const CivicIssueSystem = () => {
             <button
               key={index}
               onClick={() => goToSlide(index)}
-              className={`w-3 h-3 rounded-full transition-all ${
-                index === currentSlide ? 'bg-white' : 'bg-white bg-opacity-50'
-              }`}
+              className={`w-3 h-3 rounded-full transition-all ${index === currentSlide ? 'bg-white' : 'bg-white bg-opacity-50'
+                }`}
             ></button>
           ))}
         </div>
@@ -880,9 +882,9 @@ const CivicIssueSystem = () => {
           <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="md:w-1/2 mb-8 md:mb-0">
-              <img 
-                src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
-                alt="Reporting an issue" 
+              <img
+                src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                alt="Reporting an issue"
                 className="rounded-lg shadow-lg"
               />
             </div>
@@ -930,8 +932,8 @@ const CivicIssueSystem = () => {
         </div>
       </section>
 
-    
-     
+
+
     </div>
   );
 };
