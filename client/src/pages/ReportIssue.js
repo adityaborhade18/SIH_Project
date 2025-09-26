@@ -319,7 +319,7 @@ const ReportIssue = () => {
         priority: 'Low',
       });
       setActiveStep(0);
-      navigate('/submission-success');
+      navigate('/track-issue');
 
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to submit issue");

@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { IssueProvider } from './context/IssueContext';
 import { Toaster } from 'react-hot-toast';
 import axios from 'axios';
+import { Outlet } from "react-router-dom";
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -19,6 +20,12 @@ import Loginn from './pages/loginn';
 // Components
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
+import SanitationDashboard from './pages/admin/sanitation';
+import Publichealth from './pages/admin/publichealth';
+import RoaddepartmentDashboard from './pages/admin/roads';
+import Waterdepartment from './pages/admin/water';
+import Electricitydepartment from './pages/admin/electricity';
+import AdminLogin from './pages/admin/AdminLogin';
 
 const ProtectedRoute = ({ children }) => {
   const [loading, setLoading] = useState(true);
@@ -120,6 +127,9 @@ const theme = createTheme({
 });
 
 function App() {
+
+const isAdminPath = useLocation().pathname.startsWith("/admin");
+
   return (
     <ThemeProvider theme={theme}>
       <IssueProvider>
@@ -167,17 +177,14 @@ function App() {
                 }
               />
 
-              <Route
-                path="/admin/dashboard"
-                element={
-                  <ProtectedRoute isAdmin={true}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
+
+          
+          <Route path="/admin/:section" element={<AdminLogin />} />
+ 
+
 
               {/* 404 fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
+              {/* <Route path="*" element={<Navigate to="/" replace />} /> */ }
             </Routes>
           </main>
           <Footer />

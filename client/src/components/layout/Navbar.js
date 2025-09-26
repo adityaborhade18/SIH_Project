@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+ import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
   AppBar,
@@ -38,6 +38,7 @@ import Loginn from '../../pages/loginn.js';
 
 const Navbar = () => {
   const theme = useTheme();
+  
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -81,20 +82,11 @@ const Navbar = () => {
       type: 'link',
       icon: <PeopleIcon sx={{ fontSize: 20, mr: 1 }} />
     },
-    { 
-      text: 'Admin Dashboard', 
-      path: '/admin/dashboard', 
-      type: 'link',
-      icon: <DashboardIcon sx={{ fontSize: 20, mr: 1 }} />
-    },
-    { 
-      text: 'Track Issue', 
-      path: '/track-issue', 
-      type: 'highlight',
-      icon: <TrackChangesIcon sx={{ fontSize: 20, mr: 1 }} />
-    },
+    
+   
     { 
       text: 'Login', 
+      
       action: () => setShowUserlogin(true), 
       type: 'cta',
       icon: <LoginIcon sx={{ fontSize: 20, mr: 1 }} />
@@ -165,7 +157,7 @@ const Navbar = () => {
       >
         <Container maxWidth="lg">
           <Toolbar disableGutters sx={{ py: 1 }}>
-            {/* Logo Section */}
+            {/* Logo Section */} 
             <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
               <Box
                 sx={{
@@ -253,33 +245,6 @@ const Navbar = () => {
 
             {/* Action Buttons */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              {/* Track Issue Button */}
-              {!isMobile && (
-                <Button
-                  component={RouterLink}
-                  to="/track-issue"
-                  startIcon={<AssignmentIcon />}
-                  sx={{
-                    color: 'primary.main',
-                    border: `1.5px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-                    borderRadius: 2,
-                    px: 3,
-                    fontWeight: 600,
-                    textTransform: 'none',
-                    letterSpacing: 0.3,
-                    fontSize: '0.9rem',
-                    '&:hover': {
-                      bgcolor: alpha(theme.palette.primary.main, 0.08),
-                      borderColor: theme.palette.primary.main,
-                      transform: 'translateY(-1px)',
-                      boxShadow: 3,
-                    },
-                    transition: 'all 0.2s ease-in-out',
-                  }}
-                >
-                  Track Issue
-                </Button>
-              )}
 
               {/* Login/Profile Section */}
               {isAuthenticated ? (
@@ -338,7 +303,7 @@ const Navbar = () => {
               ) : (
                 !isMobile && (
                   <Button
-                    onClick={() => setShowUserlogin(true)}
+                    onClick={() => navigate('/loginn')}
                     startIcon={<LoginIcon />}
                     variant="contained"
                     sx={{
@@ -458,4 +423,5 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default Navbar; 
+

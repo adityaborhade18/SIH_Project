@@ -113,12 +113,8 @@ const CivicIssueSystem = () => {
             {civicIssues[currentSlide].description}
           </p>
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 animate-fade-in-up animation-delay-400">
-            <button  className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105">
-              Report an Issue
-            </button>
-            <button className="px-8 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors transform hover:scale-105">
-              View Issues Map
-            </button>
+            
+            
           </div>
         </div>
 

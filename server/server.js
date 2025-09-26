@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import userRouter from "./routes/userRouter.js";
 import issueRouter from "./routes/issueRouter.js";
+import AdminRouter from "./routes/adminRouter.js";
 
 
 const app = express();
@@ -29,6 +30,7 @@ app.get("/", (req, res) => {
 });
 
 app.use('/api/user', userRouter);
+app.use('/api/admin', AdminRouter);
 app.use('/api/user', issueRouter);
 
 
