@@ -132,31 +132,26 @@ const IssueTracker = () => {
     }
   };
 
-  // Correctly parse location data - FIXED for your specific data structure
-  const parseLocationData = (locationString) => {
-    try {
-      const loc = JSON.parse(locationString);
-      
-      if (loc.coordinates && Array.isArray(loc.coordinates) && loc.coordinates.length === 2) {
-        // Your data is stored as [longitude, latitude] - we need to swap to [latitude, longitude]
-        const [longitude, latitude] = loc.coordinates;
-        
-        return {
-          ...loc,
-          coordinates: [latitude, longitude], // Correct order: [lat, lng]
-          latitude: latitude,
-          longitude: longitude,
-          // Use the address from the data if available, or create one
-          address: loc.address || `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`
-        };
-      }
-      
-      return loc;
-    } catch (e) {
-      console.warn('Error parsing location data:', e);
-      return {};
-    }
-  };
+const parseLocationData = (location) => {
+  if (!location) return {};
+
+  if (location.type === 'Point' && Array.isArray(location.coordinates) && location.coordinates.length === 2) {
+    const [lng, lat] = location.coordinates; // GeoJSON order
+    return {
+      ...location,
+      lat,                 // latitude
+      lng,                 // longitude
+      latLng: [lat, lng],  // for maps
+      address: `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`,
+    };
+  }
+  return location;
+};
+
+
+
+
+
 
   // Filter, search, sort
   const filteredIssues = issues
@@ -469,14 +464,15 @@ const IssueTracker = () => {
 
                       {/* Metadata */}
                       <Box display="flex" flexWrap="wrap" gap={3} alignItems="center">
-                        {loc.address && (
-                          <Box display="flex" alignItems="center">
-                            <LocationIcon fontSize="small" color="action" sx={{ mr: 1 }} />
-                            <Typography variant="body2" color="text.secondary">
-                              {loc.address}
-                            </Typography>
-                          </Box>
-                        )}
+                       {loc.address && (
+  <Box display="flex" alignItems="center">
+    <LocationIcon fontSize="small" color="action" sx={{ mr: 1 }} />
+    <Typography variant="body2" color="text.secondary">
+      {loc.address}
+    </Typography>
+  </Box>
+)}
+
 
                         <Box display="flex" alignItems="center">
                           <CalendarIcon fontSize="small" color="action" sx={{ mr: 1 }} />
