@@ -81,7 +81,6 @@ export const createIssue = async (req, res) => {
     });
   }
 };
-
 // GET: All issues
 export const getAllIssue = async (req, res) => {
   try {
