@@ -19,6 +19,8 @@ const Loginn = () => {
     try {
       const { data } = await axios.post(`/api/user/${state}`, { name, email, password }, { withCredentials: true });
       if (data.success) {
+        const token=console.log(data.token);
+        localStorage.setItem("token", data.token);
         toast.success(data.message || "Success!");
         navigate(from, { replace: true }); // redirect to previous page or home
       } else {

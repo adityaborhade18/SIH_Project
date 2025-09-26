@@ -130,7 +130,7 @@ function App() {
           style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}
         >
           <Navbar />
-          <main style={{ flex: 1, paddingTop: '10px' }}>
+          <main style={{ flex: 1 }}>
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<HomePage />} />

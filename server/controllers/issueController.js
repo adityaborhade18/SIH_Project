@@ -1,77 +1,86 @@
 import Issue from "../models/issue.js";
 import User from '../models/User.js';
 
-// POST: Report issue
 
+
+// POST: Report issue
 export const createIssue = async (req, res) => {
   try {
-    // Parse the fields from form-data
     const { title, description, priority, location } = req.body;
 
     // Validate required fields
-    if (!title) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Title is required" 
+    if (!title || !description || !location) {
+      return res.status(400).json({
+        success: false,
+        message: "Title (issue type), description, and location are required",
       });
     }
 
-    if (!description) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Description is required" 
-      });
+    // Parse location JSON if it's a string
+    let locationData;
+    try {
+      locationData = typeof location === "string" ? JSON.parse(location) : location;
+    } catch {
+      return res.status(400).json({ success: false, message: "Invalid location format" });
     }
 
-    // With CloudinaryStorage, the file URL is available in req.file.path
+    // Validate coordinates
+    if (!Array.isArray(locationData.coordinates) || locationData.coordinates.length !== 2) {
+      return res.status(400).json({ success: false, message: "Coordinates must be [lng, lat]" });
+    }
+
     const imageUrl = req.file ? req.file.path : null;
 
-    // Parse location if it's a JSON string
-    let locationString = location;
-    try {
-      if (location && typeof location === 'string') {
-        const locationData = JSON.parse(location);
-        locationString = JSON.stringify(locationData);
-      }
-    } catch (parseError) {
-      // If parsing fails, keep it as is
-      locationString = location;
+    // Check for duplicate issue of same type within 100 meters
+    const duplicate = await Issue.findOne({
+      title, // check duplicates by issue type
+      location: {
+        $near: {
+          $geometry: {
+            type: "Point",
+            coordinates: locationData.coordinates, // [lng, lat]
+          },
+          $maxDistance: 100, // meters
+        },
+      },
+    });
+
+    if (duplicate) {
+      return res.status(409).json({
+        success: false,
+        message: `A similar ${title} issue has already been reported nearby`,
+        duplicate,
+      });
     }
 
-    // Create the issue
+    // Create new issue
     const issue = new Issue({
-      title: title.trim(),
+      title: title.trim(), // this is your issue type
       description: description.trim(),
       priority: priority || "Low",
-      location: locationString,
+      location: {
+        type: "Point",
+        coordinates: locationData.coordinates, // [lng, lat]
+      },
+      address: locationData.address || "",
       image: imageUrl,
     });
 
     await issue.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Issue reported successfully!",
-      issue: {
-        id: issue._id,
-        title: issue.title,
-        description: issue.description,
-        priority: issue.priority,
-        location: issue.location,
-        status: issue.status,
-        image: issue.image,
-        createdAt: issue.createdAt
-      },
+      issue,
     });
-
   } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: error.message || "Internal server error" 
+    console.error("Error creating issue:", error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error",
     });
   }
 };
-
 // GET: All issues
 export const getAllIssue = async (req, res) => {
   try {
@@ -83,11 +92,12 @@ export const getAllIssue = async (req, res) => {
   }
 };
 
+// GET: Issue by ID
 export const getIssueById = async (req, res) => {
   try {
     const issue = await Issue.findById(req.params.id);
     if (!issue) {
-      return res.status(404).json({ success: false, message: 'Issue not found' });
+      return res.status(404).json({ success: false, message: "Issue not found" });
     }
     res.status(200).json({ success: true, issue });
   } catch (error) {
