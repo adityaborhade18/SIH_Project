@@ -68,43 +68,43 @@ const IssueDetails = () => {
     fetchIssue();
   }, [id]);
 
-  const parseLocationData = (locationString) => {
-    try {
-      const locationData = typeof locationString === 'string' 
-        ? JSON.parse(locationString) 
-        : locationString;
-      
-      const coordinates = locationData.coordinates || [];
-      const lat = coordinates[0];
-      const lng = coordinates[1];
-      
-      const address = locationData.address || 
-                    locationData.formattedAddress || 
-                    `Lat: ${lat}, Lng: ${lng}`;
-      
-      return {
-        lat: lat || null,
-        lng: lng || null,
-        address: address,
-        coordinates: coordinates
-      };
-    } catch (error) {
-      console.error('Error parsing location:', error);
-      if (typeof locationString === 'string') {
-        const latMatch = locationString.match(/Lat:\s*([\d.-]+)/);
-        const lngMatch = locationString.match(/Lng:\s*([\d.-]+)/);
-        if (latMatch && lngMatch) {
-          return {
-            lat: parseFloat(latMatch[1]),
-            lng: parseFloat(lngMatch[1]),
-            address: locationString,
-            coordinates: [parseFloat(latMatch[1]), parseFloat(lngMatch[1])]
-          };
-        }
+ const parseLocationData = (locationString) => {
+  try {
+    const locationData = typeof locationString === 'string' 
+      ? JSON.parse(locationString) 
+      : locationString;
+    
+    const coordinates = locationData.coordinates || [];
+    const lat = coordinates[1] || null; // latitude
+    const lng = coordinates[0] || null; // longitude
+    
+    const address = locationData.address || 
+                  locationData.formattedAddress || 
+                  (lat && lng ? `Lat: ${lat}, Lng: ${lng}` : 'Location data not available');
+    
+    return {
+      lat,
+      lng,
+      address,
+      coordinates
+    };
+  } catch (error) {
+    console.error('Error parsing location:', error);
+    if (typeof locationString === 'string') {
+      const latMatch = locationString.match(/Lat:\s*([\d.-]+)/);
+      const lngMatch = locationString.match(/Lng:\s*([\d.-]+)/);
+      if (latMatch && lngMatch) {
+        return {
+          lat: parseFloat(latMatch[1]),
+          lng: parseFloat(lngMatch[1]),
+          address: locationString,
+          coordinates: [parseFloat(lngMatch[1]), parseFloat(latMatch[1])] // ensure order [lng, lat]
+        };
       }
-      return { lat: null, lng: null, address: 'Location data not available', coordinates: [] };
     }
-  };
+    return { lat: null, lng: null, address: 'Location data not available', coordinates: [] };
+  }
+};
 
   const getUserLocation = () => {
     if (!navigator.geolocation) {
@@ -452,7 +452,7 @@ const IssueDetails = () => {
                         </Typography>
                         <Stack direction="row" spacing={1} alignItems="center">
                           <Typography variant="body2" sx={{ fontFamily: 'monospace', bgcolor: 'grey.50', p: 1, borderRadius: 1, flex: 1 }}>
-                            {issueLocation.lat.toFixed(6)}, {issueLocation.lng.toFixed(6)}
+                            {issueLocation.lng.toFixed(6)}, {issueLocation.lat.toFixed(6)}
                           </Typography>
                           <Tooltip title="Copy coordinates">
                             <IconButton size="small" onClick={copyCoordinates}>
