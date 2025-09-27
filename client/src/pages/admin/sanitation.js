@@ -84,6 +84,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const statusOptions = ['Pending', 'In Process', 'Assigned', 'Solved', 'Rejected'];
 const priorityLevels = ['Low', 'Medium', 'High', 'Critical'];
@@ -104,9 +107,240 @@ const priorityColors = {
   'Critical': '#f44336'
 };
 
+
+const mapIssues = [
+  {
+    id: 1,
+    category: 'Sanitation',
+    position: [18.5204, 73.8567],
+    title: 'Garbage not collected',
+    description: 'Overflowing bins near FC Road.',
+  },
+  {
+    id: 2,
+    category: 'Public Health',
+    position: [18.5310, 73.8446],
+    title: 'Mosquito breeding',
+    description: 'Stagnant water near Shivajinagar.',
+  },
+  {
+    id: 3,
+    category: 'Roads & Transport',
+    position: [18.5074, 73.8077],
+    title: 'Potholes on road',
+    description: 'Large potholes on Baner Road.',
+  },
+  {
+    id: 4,
+    category: 'Water Supply',
+    position: [18.4967, 73.8627],
+    title: 'Water shortage',
+    description: 'Low water pressure in Kothrud.',
+  },
+  {
+    id: 5,
+    category: 'Electricity',
+    position: [18.5382, 73.8800],
+    title: 'Power outage',
+    description: 'No electricity in Viman Nagar.',
+  },
+  {
+    id: 6,
+    category: 'Sanitation',
+    position: [18.5145, 73.8451],
+    title: 'Open dumping',
+    description: 'Waste dumped near Swargate bus stand.',
+  },
+  {
+    id: 7,
+    category: 'Public Health',
+    position: [18.5402, 73.8555],
+    title: 'Clinic shortage',
+    description: 'No doctors available in Deccan clinic.',
+  },
+  {
+    id: 8,
+    category: 'Roads & Transport',
+    position: [18.5603, 73.8065],
+    title: 'Broken streetlight',
+    description: 'Streetlights not working on Aundh Road.',
+  },
+  {
+    id: 9,
+    category: 'Water Supply',
+    position: [18.5821, 73.8931],
+    title: 'Pipeline leakage',
+    description: 'Water pipeline burst near Hadapsar.',
+  },
+  {
+    id: 10,
+    category: 'Electricity',
+    position: [18.6186, 73.8037],
+    title: 'Transformer issue',
+    description: 'Transformer sparking in Pashan area.',
+  },
+  {
+    id: 11,
+    category: 'Sanitation',
+    position: [18.4871, 73.8079],
+    title: 'Uncollected garbage',
+    description: 'Katraj depot road full of garbage.',
+  },
+  {
+    id: 12,
+    category: 'Public Health',
+    position: [18.5910, 73.8215],
+    title: 'Dengue cases rising',
+    description: 'High mosquito density near Yerwada.',
+  },
+  {
+    id: 13,
+    category: 'Roads & Transport',
+    position: [18.4965, 73.9447],
+    title: 'Traffic light not working',
+    description: 'Signal broken at Magarpatta crossing.',
+  },
+  {
+    id: 14,
+    category: 'Water Supply',
+    position: [18.5705, 73.8675],
+    title: 'No water supply',
+    description: 'Residents of Koregaon Park reporting no water.',
+  },
+  {
+    id: 15,
+    category: 'Electricity',
+    position: [18.6500, 73.7665],
+    title: 'Frequent power cuts',
+    description: 'Baner area facing multiple outages daily.',
+  },
+  {
+    id: 16,
+    category: 'Sanitation',
+    position: [18.5081, 73.8415],
+    title: 'Dirty public toilet',
+    description: 'Unhygienic condition at Camp bus stand toilet.',
+  },
+  {
+    id: 17,
+    category: 'Public Health',
+    position: [18.5201, 73.9125],
+    title: 'Sewage overflow',
+    description: 'Open sewage water in Kalyani Nagar.',
+  },
+  {
+    id: 18,
+    category: 'Roads & Transport',
+    position: [18.4751, 73.8680],
+    title: 'Damaged bridge',
+    description: 'Small bridge near Bibwewadi unsafe.',
+  },
+  {
+    id: 19,
+    category: 'Water Supply',
+    position: [18.4954, 73.8257],
+    title: 'Contaminated water',
+    description: 'Water smells bad in Parvati area.',
+  },
+  {
+    id: 20,
+    category: 'Electricity',
+    position: [18.5300, 73.8050],
+    title: 'Streetlights fused',
+    description: 'Dark streets in Shivaji Nagar due to fused lights.',
+  },
+];
+
+
+// Custom icons for categories
+const categoryIcons = {
+  'Sanitation': new L.Icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/128/3077/3077975.png',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32],
+  }),
+  'Public Health': new L.Icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/128/2382/2382461.png',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32],
+  }),
+  'Roads & Transport': new L.Icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/128/2554/2554922.png',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32],
+  }),
+  'Water Supply': new L.Icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/128/4497/4497450.png',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32],
+  }),
+  'Electricity': new L.Icon({
+    iconUrl: 'https://cdn-icons-png.flaticon.com/128/616/616494.png',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32],
+  }),
+};
+
 const SanitationDashboard = () => {
   const theme = useTheme();
-  const { issues, updateIssueStatus } = useIssues();
+  const { updateIssueStatus } = useIssues();
+
+  // Dummy sanitation issues for development/testing
+  const issues = [
+    {
+      id: 1,
+      title: 'Garbage not collected',
+      description: 'Overflowing bins near FC Road.',
+      location: { address: 'FC Road, Pune', coordinates: [18.5204, 73.8567] },
+      category: 'Sanitation',
+      status: 'Pending',
+      priority: 'High',
+      date: new Date().toISOString(),
+      reporter: { name: 'John Doe', email: 'john@example.com' },
+      images: [],
+    },
+    {
+      id: 2,
+      title: 'Open dumping',
+      description: 'Waste dumped near Swargate bus stand.',
+      location: { address: 'Swargate, Pune', coordinates: [18.5145, 73.8451] },
+      category: 'Sanitation',
+      status: 'Assigned',
+      priority: 'Medium',
+      date: new Date().toISOString(),
+      reporter: { name: 'Jane Smith', email: 'jane@example.com' },
+      images: [],
+    },
+    {
+      id: 3,
+      title: 'Uncollected garbage',
+      description: 'Katraj depot road full of garbage.',
+      location: { address: 'Katraj, Pune', coordinates: [18.4871, 73.8079] },
+      category: 'Sanitation',
+      status: 'In Process',
+      priority: 'Low',
+      date: new Date().toISOString(),
+      reporter: { name: 'Amit Kumar', email: 'amit@example.com' },
+      images: [],
+    },
+    {
+      id: 4,
+      title: 'Dirty public toilet',
+      description: 'Unhygienic condition at Camp bus stand toilet.',
+      location: { address: 'Camp, Pune', coordinates: [18.5081, 73.8415] },
+      category: 'Sanitation',
+      status: 'Solved',
+      priority: 'Critical',
+      date: new Date().toISOString(),
+      reporter: { name: 'Priya Singh', email: 'priya@example.com' },
+      images: [],
+    },
+  ];
   const [selectedIssues, setSelectedIssues] = useState([]);
   const [filters, setFilters] = useState({
     status: [],
@@ -126,10 +360,8 @@ const SanitationDashboard = () => {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('email');
 
-  // Filter issues for Sanitation department only
-  const sanitationIssues = React.useMemo(() => {
-    return issues.filter(issue => issue.department === department);
-  }, [issues]);
+  // Use all dummy issues for the dashboard
+  const sanitationIssues = issues;
 
   // Filter and sort issues
   const filteredIssues = React.useMemo(() => {
@@ -897,21 +1129,35 @@ const SanitationDashboard = () => {
       )}
 
       {activeTab === 'map' && (
-        <Paper sx={{ p: 3, height: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Box textAlign="center">
-            <MapIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              Sanitation Issues Map
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              View garbage collection routes, cleaning schedules, and issue hotspots.
-            </Typography>
-            <Button variant="outlined" startIcon={<Timeline />}>
-              View Collection Routes
-            </Button>
-          </Box>
-        </Paper>
-      )}
+        <Paper sx={{ p: 3, height: '70vh', minHeight: 500 }}>
+                  <Typography variant="h6" gutterBottom>Interactive Map View (Pune)</Typography>
+                  <Box sx={{ width: '100%', height: '60vh', position: 'relative', borderRadius: 2, overflow: 'hidden', boxShadow: 1 }}>
+                    <MapContainer center={[18.5204, 73.8567]} zoom={12} style={{ width: '100%', height: '100%' }} scrollWheelZoom={true}>
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      {mapIssues.map(issue => (
+                        <Marker key={issue.id} position={issue.position} icon={categoryIcons[issue.category]}>
+                          <Popup>
+                            <Typography variant="subtitle2">{issue.title}</Typography>
+                            <Typography variant="body2" color="text.secondary">{issue.description}</Typography>
+                            <Typography variant="caption" color="primary">Category: {issue.category}</Typography>
+                          </Popup>
+                        </Marker>
+                      ))}
+                    </MapContainer>
+                  </Box>
+                  <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    {Object.keys(categoryIcons).map(cat => (
+                      <Box key={cat} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <img src={categoryIcons[cat].options.iconUrl} alt={cat} style={{ width: 24, height: 24 }} />
+                        <Typography variant="body2">{cat}</Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </Paper>
+              )}
 
       {activeTab === 'analytics' && (
         <Box>
