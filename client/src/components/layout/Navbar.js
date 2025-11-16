@@ -85,7 +85,7 @@ const Navbar = () => {
     
    
     { 
-      text: 'Login', 
+      text: 'Sign in ', 
       
       action: () => setShowUserlogin(true), 
       type: 'cta',
@@ -424,4 +424,3 @@ const Navbar = () => {
 };
 
 export default Navbar; 
-
