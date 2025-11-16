@@ -39,7 +39,7 @@ const AdminLogin = () => {
     if (section === 'roads') return <RoaddepartmentDashboard />;
     if (section === 'water') return <Waterdepartment />;
     if (section === 'electricity') return <Electricitydepartment />;
-    return <div>Invalid section</div>;
+    return <SanitationDashboard />;
   }
 
   return (
