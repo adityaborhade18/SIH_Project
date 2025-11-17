@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-const Loginn = () => {
+const Loginn = ({ onLoginSuccess }) => {   
   const navigate = useNavigate();
   const location = useLocation();
   const [state, setState] = useState("login");
@@ -11,18 +11,28 @@ const Loginn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Optional: redirect back to previous page after login
   const from = location.state?.from?.pathname || "/";
 
   const submithandler = async (event) => {
     event.preventDefault();
     try {
-      const { data } = await axios.post(`/api/user/${state}`, { name, email, password }, { withCredentials: true });
+      const { data } = await axios.post(
+        `/api/user/${state}`,
+        { name, email, password },
+        { withCredentials: true }
+      );
+
       if (data.success) {
-        const token=console.log(data.token);
         localStorage.setItem("token", data.token);
+
         toast.success(data.message || "Success!");
-        navigate(from, { replace: true }); // redirect to previous page or home
+
+      
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        }
+
+        navigate(from, { replace: true });
       } else {
         toast.error(data.message || "Login failed");
       }
@@ -38,7 +48,8 @@ const Loginn = () => {
         className="flex flex-col gap-4 p-8 w-80 sm:w-[352px] rounded-lg shadow-xl border border-gray-200 bg-white"
       >
         <p className="text-2xl font-medium m-auto">
-          <span className="text-blue-500">User</span> {state === "login" ? "Login" : "Sign Up"}
+          <span className="text-blue-500">User</span>{" "}
+          {state === "login" ? "Login" : "Sign Up"}
         </p>
 
         {state === "register" && (
@@ -82,12 +93,22 @@ const Loginn = () => {
         {state === "register" ? (
           <p>
             Already have account?{" "}
-            <span onClick={() => setState("login")} className="text-blue-500 cursor-pointer">Click here</span>
+            <span
+              onClick={() => setState("login")}
+              className="text-blue-500 cursor-pointer"
+            >
+              Click here
+            </span>
           </p>
         ) : (
           <p>
             Create an account?{" "}
-            <span onClick={() => setState("register")} className="text-blue-500 cursor-pointer">Click here</span>
+            <span
+              onClick={() => setState("register")}
+              className="text-blue-500 cursor-pointer"
+            >
+              Click here
+            </span>
           </p>
         )}
 
