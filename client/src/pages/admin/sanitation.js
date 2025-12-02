@@ -589,48 +589,17 @@ const SanitationDashboard = () => {
   ];
 
   // Stats cards for Sanitation department
-  const stats = [
-    { 
-      title: 'Total Reports', 
-      value: sanitationIssues.length,
-      icon: Warning,
-      color: theme.palette.primary.main,
-      trend: '+12%',
-      trendColor: 'success.main'
-    },
-    { 
-      title: 'Pending', 
-      value: sanitationIssues.filter(issue => issue.status === 'Pending').length,
-      icon: PendingActions,
-      color: '#ff9800',
-      trend: '+5%',
-      trendColor: 'error.main'
-    },
-    { 
-      title: 'In Progress', 
-      value: sanitationIssues.filter(issue => issue.status === 'In Process').length,
-      icon: Build,
-      color: '#2196f3',
-      trend: '+8%',
-      trendColor: 'success.main'
-    },
-    { 
-      title: 'Resolved', 
-      value: sanitationIssues.filter(issue => issue.status === 'Solved').length,
-      icon: CheckCircleOutline,
-      color: '#4caf50',
-      trend: '+15%',
-      trendColor: 'success.main'
-    },
-  ];
+
 
   // Render the component
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, py: 8}}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+         
         <Box>
+          
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Sanitation Department Dashboard
+            Sanitation Department 
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Welcome back! Here's what's happening with sanitation services.
@@ -790,20 +759,7 @@ const SanitationDashboard = () => {
 
       {/* Department Header */}
       <Box sx={{ mb: 4, p: 3, bgcolor: '#79554810', borderRadius: 2 }}>
-        <Box display="flex" alignItems="center" mb={2}>
-          <Avatar sx={{ bgcolor: '#795548', mr: 2 }}>
-            <CleaningServices />
-          </Avatar>
-          <Box>
-            <Typography variant="h5" fontWeight="bold">
-              Sanitation Department
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Garbage collection, street cleaning, waste management services
-            </Typography>
-          </Box>
-        </Box>
-        
+  
         {/* Department stats */}
         <Box sx={{ 
           display: 'grid', 
@@ -894,72 +850,71 @@ const SanitationDashboard = () => {
       {/* Main Content */}
       {activeTab === 'overview' && (
         <>
-          {/* Stats Cards */}
-          <Box sx={{ 
-            display: 'grid', 
-            gap: 3, 
-            gridTemplateColumns: { 
-              xs: '1fr', 
-              sm: 'repeat(2, 1fr)', 
-              lg: 'repeat(4, 1fr)' 
-            }, 
-            mb: 4 
-          }}>
-            {stats.map((stat, index) => (
-              <Card key={index} variant="outlined" sx={{ 
-                borderLeft: `4px solid ${stat.color}`,
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                overflow: 'hidden'
-              }}>
-                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography 
-                        color="textSecondary" 
-                        variant="subtitle2" 
-                        gutterBottom
-                        noWrap  
-                        sx={{
-                          textOverflow: 'ellipsis',
-                          overflow: 'hidden'
-                        }}
-                      >
-                        {stat.title}
-                      </Typography>
-                      <Typography variant="h5" noWrap>{stat.value}</Typography>
-                      <Typography 
-                        variant="caption" 
-                        sx={{ 
-                          color: stat.trendColor,
-                          display: 'flex',
-                          alignItems: 'center',
-                          mt: 0.5,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }}
-                      >
-                        {stat.trend} from last week
-                      </Typography>
-                    </Box>
-                    <Avatar sx={{ 
-                      bgcolor: stat.color + '20', 
-                      color: stat.color,
-                      ml: 1,
-                      flexShrink: 0  
-                    }}>
-                      <stat.icon />
-                    </Avatar>
-                  </Box>
-                </CardContent>
-              </Card>
-            ))}
-          </Box>
+        
+         
 
-          {/* Charts Row */}
+          {/* Recent Reports Table */}
+          <Paper elevation={0} variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" component="h2">
+                Recent Sanitation Reports
+              </Typography>
+              <Box>
+                <Typography variant="body2" color="text.secondary" display="inline" mr={2}>
+                  Total: {filteredIssues.length} issues
+                </Typography>
+                <Button 
+                  size="small" 
+                  startIcon={<Notifications />}
+                  onClick={() => {
+                    setShowMessageDialog(true);
+                    setMessageType('notification');
+                  }}
+                >
+                  Notify Team
+                </Button>
+              </Box>
+            </Box>
+            
+            <div style={{ height: 500, width: '100%' }}>
+              <DataGrid
+                rows={filteredIssues}
+                columns={columns}
+                pageSize={7}
+                rowsPerPageOptions={[7, 15, 25]}
+                checkboxSelection
+                disableSelectionOnClick
+                onSelectionModelChange={handleRowSelection}
+                selectionModel={selectedIssues}
+                getRowHeight={() => 'auto'}
+                onSortModelChange={(model) => setSortModel(model)}
+                sortModel={sortModel}
+                sx={{
+                  border: 'none',
+                  '& .MuiDataGrid-cell': {
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
+                  },
+                  '& .MuiDataGrid-columnHeaders': {
+                    backgroundColor: theme.palette.mode === 'light' ? '#f8f9fa' : '#1e1e1e',
+                    borderRadius: '8px 8px 0 0',
+                    borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
+                  },
+                  '& .MuiDataGrid-columnHeaderTitle': {
+                    fontWeight: 600,
+                  },
+                  '& .MuiDataGrid-row:hover': {
+                    backgroundColor: theme.palette.action.hover,
+                  },
+                }}
+              />
+            </div>
+          </Paper>
+
+           
+            {/* Charts Row */}
           <Box sx={{ 
             display: 'grid', 
             gap: 3, 
@@ -1048,83 +1003,10 @@ const SanitationDashboard = () => {
               </Box>
             </Paper>
 
-            <Paper sx={{ p: 2, height: 300 }}>
-              <Typography variant="h6" gutterBottom>Issues by Category</Typography>
-              <ResponsiveContainer width="100%" height="90%">
-                <BarChart
-                  data={categoryData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  layout="vertical"
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis dataKey="name" type="category" width={100} />
-                  <RechartsTooltip />
-                  <Bar dataKey="count" fill="#795548" name="Reports" />
-                </BarChart>
-              </ResponsiveContainer>
-            </Paper>
+           
           </Box>
 
-          {/* Recent Reports Table */}
-          <Paper elevation={0} variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" component="h2">
-                Recent Sanitation Reports
-              </Typography>
-              <Box>
-                <Typography variant="body2" color="text.secondary" display="inline" mr={2}>
-                  Total: {filteredIssues.length} issues
-                </Typography>
-                <Button 
-                  size="small" 
-                  startIcon={<Notifications />}
-                  onClick={() => {
-                    setShowMessageDialog(true);
-                    setMessageType('notification');
-                  }}
-                >
-                  Notify Team
-                </Button>
-              </Box>
-            </Box>
-            
-            <div style={{ height: 500, width: '100%' }}>
-              <DataGrid
-                rows={filteredIssues}
-                columns={columns}
-                pageSize={7}
-                rowsPerPageOptions={[7, 15, 25]}
-                checkboxSelection
-                disableSelectionOnClick
-                onSelectionModelChange={handleRowSelection}
-                selectionModel={selectedIssues}
-                getRowHeight={() => 'auto'}
-                onSortModelChange={(model) => setSortModel(model)}
-                sortModel={sortModel}
-                sx={{
-                  border: 'none',
-                  '& .MuiDataGrid-cell': {
-                    padding: '12px 16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
-                  },
-                  '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: theme.palette.mode === 'light' ? '#f8f9fa' : '#1e1e1e',
-                    borderRadius: '8px 8px 0 0',
-                    borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
-                  },
-                  '& .MuiDataGrid-columnHeaderTitle': {
-                    fontWeight: 600,
-                  },
-                  '& .MuiDataGrid-row:hover': {
-                    backgroundColor: theme.palette.action.hover,
-                  },
-                }}
-              />
-            </div>
-          </Paper>
+
         </>
       )}
 

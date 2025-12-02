@@ -394,7 +394,7 @@ const Waterdepartment = () => {
 
   // Render the component
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3,py: 8 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
