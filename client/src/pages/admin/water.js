@@ -1,7 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import DirectionsCar from '@mui/icons-material/DirectionsCar';
-
-import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
+import React, { useState, useMemo } from 'react';
 import { 
   Box, 
   Typography, 
@@ -14,10 +11,8 @@ import {
   Chip, 
   Card, 
   CardContent,
-  Divider,
   IconButton,
   Tooltip,
-  useTheme,
   Button,
   Dialog,
   DialogTitle,
@@ -25,15 +20,11 @@ import {
   DialogActions,
   TextField,
   Checkbox,
-  FormControlLabel,
   Tabs,
   Tab,
-  Badge,
-  Snackbar,
   Alert,
   Grid,
   Menu,
-  ListItemIcon,
   ListItemText
 } from '@mui/material';
 import { 
@@ -41,53 +32,31 @@ import {
   PendingActions, 
   Build, 
   Warning, 
-  Refresh, 
   FilterList,
-  MoreVert,
-  LocationOn,
-  Category,
-  CalendarToday,
   Search,
   Assignment,
   Send,
   Notifications,
   BarChart as BarChartIcon,
-  Person,
-  Security,
-  Settings,
-  Delete,
-  Edit,
-  Visibility,
-  Email,
-  Sms,
-  Notifications as NotificationsIcon,
   Map as MapIcon,
-  Timeline,
-  PieChart as PieChartIcon,
-  FilterAlt,
-  Sort,
-  GroupWork,
-  Route,
-  PriorityHigh,
-  Chat,
   Assessment,
   People,
-  AdminPanelSettings,
-  History,
-  Image,
-  VideoLibrary,
+  WaterDrop,
+  Email,
   AttachFile,
-  CleaningServices
+  LocationOn
 } from '@mui/icons-material';
-import { useIssues } from '../../context/IssueContext';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
+import { DataGrid } from '@mui/x-data-grid';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 const statusOptions = ['Pending', 'In Process', 'Assigned', 'Solved', 'Rejected'];
 const priorityLevels = ['Low', 'Medium', 'High', 'Critical'];
-const department = 'Sanitation'; // Single department focus
 
 const statusColors = {
   'Pending': '#ff9800',
@@ -104,9 +73,165 @@ const priorityColors = {
   'Critical': '#f44336'
 };
 
-const Waterdepartment = () => {
-  const theme = useTheme();
-  const { issues, updateIssueStatus } = useIssues();
+// Water-specific map issues
+const waterMapIssues = [
+  {
+    id: 1,
+    category: 'Water Supply',
+    position: [18.4967, 73.8627],
+    title: 'Water shortage',
+    description: 'Low water pressure in Kothrud.',
+  },
+  {
+    id: 2,
+    category: 'Water Supply',
+    position: [18.5821, 73.8931],
+    title: 'Pipeline leakage',
+    description: 'Water pipeline burst near Hadapsar.',
+  },
+  {
+    id: 3,
+    category: 'Water Supply',
+    position: [18.5705, 73.8675],
+    title: 'No water supply',
+    description: 'Residents of Koregaon Park reporting no water.',
+  },
+  {
+    id: 4,
+    category: 'Water Supply',
+    position: [18.4954, 73.8257],
+    title: 'Contaminated water',
+    description: 'Water smells bad in Parvati area.',
+  },
+  {
+    id: 5,
+    category: 'Water Supply',
+    position: [18.5204, 73.8567],
+    title: 'Low water pressure',
+    description: 'Residents complaining about weak water flow.',
+  },
+  {
+    id: 6,
+    category: 'Water Supply',
+    position: [18.5314, 73.8446],
+    title: 'Water tanker required',
+    description: 'Area facing acute water shortage.',
+  },
+  {
+    id: 7,
+    category: 'Water Supply',
+    position: [18.5074, 73.8477],
+    title: 'Broken water pipe',
+    description: 'Water wastage on main road.',
+  },
+  {
+    id: 8,
+    category: 'Water Supply',
+    position: [18.5603, 73.8165],
+    title: 'Irregular water timings',
+    description: 'Water supply timings not consistent.',
+  },
+  {
+    id: 9,
+    category: 'Water Supply',
+    position: [18.6186, 73.8237],
+    title: 'Water quality issue',
+    description: 'Residents reporting muddy water.',
+  },
+  {
+    id: 10,
+    category: 'Water Supply',
+    position: [18.6500, 73.7765],
+    title: 'Overhead tank leakage',
+    description: 'Society tank leaking continuously.',
+  },
+];
+
+// Water icon for map
+const waterIcon = new L.Icon({
+  iconUrl: 'https://cdn-icons-png.flaticon.com/128/4497/4497450.png',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -32],
+});
+
+const WaterDashboard = () => {
+  // Dummy water issues data
+  const waterIssues = [
+    {
+      id: 1,
+      title: 'Water shortage in Kothrud',
+      description: 'Low water pressure in Kothrud area for 3 days.',
+      location: { address: 'Kothrud, Pune', coordinates: [18.4967, 73.8627] },
+      category: 'Water Supply',
+      status: 'Pending',
+      priority: 'High',
+      date: new Date().toISOString(),
+      reporter: { name: 'Rajesh Kumar', email: 'rajesh@example.com' },
+      images: [],
+    },
+    {
+      id: 2,
+      title: 'Pipeline leakage',
+      description: 'Water pipeline burst near Hadapsar market.',
+      location: { address: 'Hadapsar, Pune', coordinates: [18.5821, 73.8931] },
+      category: 'Water Supply',
+      status: 'Assigned',
+      priority: 'Critical',
+      date: new Date().toISOString(),
+      reporter: { name: 'Meena Sharma', email: 'meena@example.com' },
+      images: [],
+    },
+    {
+      id: 3,
+      title: 'No water in Koregaon Park',
+      description: 'Residents reporting no water supply since yesterday.',
+      location: { address: 'Koregaon Park, Pune', coordinates: [18.5705, 73.8675] },
+      category: 'Water Supply',
+      status: 'In Process',
+      priority: 'High',
+      date: new Date().toISOString(),
+      reporter: { name: 'Amit Patel', email: 'amit@example.com' },
+      images: [],
+    },
+    {
+      id: 4,
+      title: 'Contaminated water in Parvati',
+      description: 'Water has foul smell and color in Parvati area.',
+      location: { address: 'Parvati, Pune', coordinates: [18.4954, 73.8257] },
+      category: 'Water Supply',
+      status: 'Solved',
+      priority: 'Medium',
+      date: new Date().toISOString(),
+      reporter: { name: 'Priya Singh', email: 'priya@example.com' },
+      images: [],
+    },
+    {
+      id: 5,
+      title: 'Low water pressure in FC Road',
+      description: 'Weak water flow in apartment buildings.',
+      location: { address: 'FC Road, Pune', coordinates: [18.5204, 73.8567] },
+      category: 'Water Supply',
+      status: 'Pending',
+      priority: 'Medium',
+      date: new Date().toISOString(),
+      reporter: { name: 'Rahul Verma', email: 'rahul@example.com' },
+      images: [],
+    },
+    {
+      id: 6,
+      title: 'Water tanker requirement',
+      description: 'Area facing acute water shortage, needs immediate tanker.',
+      location: { address: 'Shivajinagar, Pune', coordinates: [18.5314, 73.8446] },
+      category: 'Water Supply',
+      status: 'Assigned',
+      priority: 'Critical',
+      date: new Date().toISOString(),
+      reporter: { name: 'Sneha Reddy', email: 'sneha@example.com' },
+      images: [],
+    },
+  ];
+
   const [selectedIssues, setSelectedIssues] = useState([]);
   const [filters, setFilters] = useState({
     status: [],
@@ -114,7 +239,6 @@ const Waterdepartment = () => {
     dateRange: [null, null],
     searchQuery: ''
   });
-  const [sortModel, setSortModel] = useState([{ field: 'date', sort: 'desc' }]);
   const [bulkAction, setBulkAction] = useState('');
   const [showBulkDialog, setShowBulkDialog] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -126,83 +250,47 @@ const Waterdepartment = () => {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('email');
 
-  // Filter issues for Sanitation department only
-  const sanitationIssues = React.useMemo(() => {
-    return issues.filter(issue => issue.department === department);
-  }, [issues]);
-
-  // Filter and sort issues
-  const filteredIssues = React.useMemo(() => {
-    return sanitationIssues.filter(issue => {
-      // Apply search query
-      if (filters.searchQuery && !`${issue.title} ${issue.description} ${issue.location} ${issue.category}`.toLowerCase().includes(filters.searchQuery.toLowerCase())) {
+  // Filter issues
+  const filteredIssues = useMemo(() => {
+    return waterIssues.filter(issue => {
+      if (filters.searchQuery && !`${issue.title} ${issue.description} ${issue.location.address}`.toLowerCase().includes(filters.searchQuery.toLowerCase())) {
         return false;
       }
-      
-      // Apply status filter
       if (filters.status.length > 0 && !filters.status.includes(issue.status)) {
         return false;
       }
-      
-      // Apply priority filter
       if (filters.priority.length > 0 && !filters.priority.includes(issue.priority)) {
         return false;
       }
-      
-      // Apply date range filter
       if (filters.dateRange[0] && new Date(issue.date) < filters.dateRange[0]) {
         return false;
       }
       if (filters.dateRange[1] && new Date(issue.date) > filters.dateRange[1]) {
         return false;
       }
-      
       return true;
-    }).sort((a, b) => {
-      // Apply sorting
-      for (let sort of sortModel) {
-        const { field, sort: sortOrder } = sort;
-        if (a[field] < b[field]) {
-          return sortOrder === 'asc' ? -1 : 1;
-        }
-        if (a[field] > b[field]) {
-          return sortOrder === 'asc' ? 1 : -1;
-        }
-      }
-      return 0;
     });
-  }, [sanitationIssues, filters, sortModel]);
+  }, [waterIssues, filters]);
 
-  // Handle status change for single issue
   const handleStatusChange = (id, newStatus) => {
-    updateIssueStatus(id, newStatus);
     showSnackbar('Status updated successfully', 'success');
   };
 
-  // Handle bulk actions
   const handleBulkAction = () => {
     if (!bulkAction || selectedIssues.length === 0) return;
-    
-    selectedIssues.forEach(id => {
-      updateIssueStatus(id, bulkAction);
-    });
-    
     setShowBulkDialog(false);
     setSelectedIssues([]);
     showSnackbar(`Updated status for ${selectedIssues.length} issues`, 'success');
   };
 
-  // Show snackbar notification
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
 
-  // Handle row selection
   const handleRowSelection = (newSelection) => {
     setSelectedIssues(newSelection);
   };
 
-  // Handle filter changes
   const handleFilterChange = (filterName, value) => {
     setFilters(prev => ({
       ...prev,
@@ -210,35 +298,24 @@ const Waterdepartment = () => {
     }));
   };
 
-  // Prepare data for charts
-  const categoryData = React.useMemo(() => {
-    return sanitationIssues.reduce((acc, issue) => {
-      const existing = acc.find(item => item.name === issue.category);
-      if (existing) {
-        existing.count += 1;
-      } else {
-        acc.push({ name: issue.category, count: 1 });
-      }
-      return acc;
-    }, []);
-  }, [sanitationIssues]);
+  // Water department stats data
+  const statusData = useMemo(() => [
+    { name: 'Pending', value: waterIssues.filter(issue => issue.status === 'Pending').length },
+    { name: 'In Process', value: waterIssues.filter(issue => issue.status === 'In Process').length },
+    { name: 'Assigned', value: waterIssues.filter(issue => issue.status === 'Assigned').length },
+    { name: 'Solved', value: waterIssues.filter(issue => issue.status === 'Solved').length },
+    { name: 'Rejected', value: waterIssues.filter(issue => issue.status === 'Rejected').length },
+  ], [waterIssues]);
 
-  const statusData = React.useMemo(() => [
-    { name: 'Pending', value: sanitationIssues.filter(issue => issue.status === 'Pending').length },
-    { name: 'In Process', value: sanitationIssues.filter(issue => issue.status === 'In Process').length },
-    { name: 'Assigned', value: sanitationIssues.filter(issue => issue.status === 'Assigned').length },
-    { name: 'Solved', value: sanitationIssues.filter(issue => issue.status === 'Solved').length },
-    { name: 'Rejected', value: sanitationIssues.filter(issue => issue.status === 'Rejected').length },
-  ], [sanitationIssues]);
+  const priorityData = useMemo(() => [
+    { priority: 'Critical', count: waterIssues.filter(i => i.priority === 'Critical').length },
+    { priority: 'High', count: waterIssues.filter(i => i.priority === 'High').length },
+    { priority: 'Medium', count: waterIssues.filter(i => i.priority === 'Medium').length },
+    { priority: 'Low', count: waterIssues.filter(i => i.priority === 'Low').length },
+  ], [waterIssues]);
 
-  // Columns configuration
+  // Columns for DataGrid
   const columns = [
-    { 
-      field: 'id', 
-      headerName: 'ID', 
-      width: 80,
-      renderCell: (params) => `#${params.value}` 
-    },
     { 
       field: 'date', 
       headerName: 'Date', 
@@ -247,18 +324,14 @@ const Waterdepartment = () => {
     },
     { 
       field: 'title', 
-      headerName: 'Title', 
-      flex: 1, 
-      minWidth: 200,
+      headerName: 'Issue', 
+      flex: 1,
       renderCell: (params) => (
         <Box>
           <Typography variant="body2" fontWeight="500">{params.value}</Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-            <Category fontSize="small" color="action" sx={{ fontSize: 14, mr: 0.5 }} />
-            <Typography variant="caption" color="text.secondary">
-              {params.row.category}
-            </Typography>
-          </Box>
+          <Typography variant="caption" color="text.secondary">
+            {params.row.description.substring(0, 60)}...
+          </Typography>
         </Box>
       )
     },
@@ -268,16 +341,13 @@ const Waterdepartment = () => {
       width: 120,
       renderCell: (params) => (
         <Chip
-          label={params.value || 'Medium'}
+          label={params.value}
           size="small"
           sx={{
-            backgroundColor: priorityColors[params.value || 'Medium'] + '20',
-            color: priorityColors[params.value || 'Medium'],
+            backgroundColor: priorityColors[params.value] + '20',
+            color: priorityColors[params.value],
             fontWeight: 500,
-            width: '100%',
-            '& .MuiChip-label': {
-              px: 1,
-            },
+            width: '80px'
           }}
         />
       )
@@ -285,236 +355,57 @@ const Waterdepartment = () => {
     { 
       field: 'location', 
       headerName: 'Location', 
-      width: 180,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <LocationOn color="action" fontSize="small" sx={{ mr: 0.5 }} />
-          <Typography variant="body2" noWrap>
-            {params.value?.address?.split(',').slice(0, 2).join(',') || 'N/A'}
-          </Typography>
-        </Box>
-      )
+      width: 150,
+      renderCell: (params) => params.value.address.split(',')[0]
     },
     {
       field: 'status',
       headerName: 'Status',
-      width: 160,
+      width: 150,
       renderCell: (params) => (
-        <Chip
-          label={params.value}
+        <Select
+          value={params.value}
+          onChange={(e) => handleStatusChange(params.id, e.target.value)}
           size="small"
-          sx={{
-            backgroundColor: statusColors[params.value] + '1a',
-            color: statusColors[params.value],
-            fontWeight: 500,
-            minWidth: '80px',
-            maxWidth: '140px',
-            '& .MuiChip-label': {
-              px: 1,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              display: 'block',
-            },
+          sx={{ 
+            width: '100%',
+            '& .MuiSelect-select': { py: 0.5 }
           }}
-        />
+        >
+          {statusOptions.map((status) => (
+            <MenuItem key={status} value={status}>
+              {status}
+            </MenuItem>
+          ))}
+        </Select>
       ),
     },
-    {
-      field: 'actions',
-      type: 'actions',
-      headerName: 'Actions',
-      width: 120,
-      getActions: (params) => [
-        <Tooltip title="View Details" key="view">
-          <IconButton onClick={() => {
-            setSelectedIssue(params.row);
-            setShowIssueDetails(true);
-          }}>
-            <Visibility fontSize="small" />
-          </IconButton>
-        </Tooltip>,
-        <Tooltip title="Change Status" key="status">
-          <FormControl variant="standard" size="small" sx={{ minWidth: 120 }}>
-            <Select
-              value={params.row.status}
-              onChange={(e) => handleStatusChange(params.id, e.target.value)}
-              sx={{
-                '&:before, &:after': { border: 'none !important' },
-                '& .MuiSelect-select': { py: 0.5, px: 1, fontSize: '0.8125rem' }
-              }}
-            >
-              {statusOptions.map((status) => (
-                <MenuItem key={status} value={status}>
-                  {status}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Tooltip>,
-      ],
-    },
   ];
 
-  // Stats cards for Sanitation department
-  const stats = [
-    { 
-      title: 'Total Reports', 
-      value: sanitationIssues.length,
-      icon: Warning,
-      color: theme.palette.primary.main,
-      trend: '+12%',
-      trendColor: 'success.main'
-    },
-    { 
-      title: 'Pending', 
-      value: sanitationIssues.filter(issue => issue.status === 'Pending').length,
-      icon: PendingActions,
-      color: '#ff9800',
-      trend: '+5%',
-      trendColor: 'error.main'
-    },
-    { 
-      title: 'In Progress', 
-      value: sanitationIssues.filter(issue => issue.status === 'In Process').length,
-      icon: Build,
-      color: '#2196f3',
-      trend: '+8%',
-      trendColor: 'success.main'
-    },
-    { 
-      title: 'Resolved', 
-      value: sanitationIssues.filter(issue => issue.status === 'Solved').length,
-      icon: CheckCircleOutline,
-      color: '#4caf50',
-      trend: '+15%',
-      trendColor: 'success.main'
-    },
+  // Water department stats
+  const waterStats = [
+    { title: 'Total Reports', value: waterIssues.length, icon: Warning, color: '#2196f3' },
+    { title: 'Pending', value: waterIssues.filter(issue => issue.status === 'Pending').length, icon: PendingActions, color: '#ff9800' },
+    { title: 'In Progress', value: waterIssues.filter(issue => issue.status === 'In Process').length, icon: Build, color: '#9c27b0' },
+    { title: 'Resolved', value: waterIssues.filter(issue => issue.status === 'Solved').length, icon: CheckCircleOutline, color: '#4caf50' },
   ];
 
-  // Render the component
   return (
-    <Box sx={{ p: 3,py: 8 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Sanitation Department Dashboard
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Welcome back! Here's what's happening with sanitation services.
-          </Typography>
-        </Box>
-        <Box display="flex" gap={1}>
-          <Button 
-            variant="outlined" 
-            startIcon={<Refresh />}
-            onClick={() => window.location.reload()}
-          >
-            Refresh
-          </Button>
-          <Button 
-            variant="contained" 
-            color="primary"
-            startIcon={<FilterList />}
-            onClick={() => setAnchorEl(document.getElementById('filter-button'))}
-            id="filter-button"
-          >
-            Filters
-          </Button>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={() => setAnchorEl(null)}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'right',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-          >
-            <Box sx={{ p: 2, width: 300 }}>
-              <Typography variant="subtitle1" gutterBottom>Filters</Typography>
-              <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  multiple
-                  value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                  renderValue={(selected) => selected.join(', ')}
-                >
-                  {statusOptions.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      <Checkbox checked={filters.status.includes(status)} />
-                      <ListItemText primary={status} />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              
-              <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-                <InputLabel>Priority</InputLabel>
-                <Select
-                  multiple
-                  value={filters.priority}
-                  onChange={(e) => handleFilterChange('priority', e.target.value)}
-                  renderValue={(selected) => selected.join(', ')}
-                >
-                  {priorityLevels.map((level) => (
-                    <MenuItem key={level} value={level}>
-                      <Checkbox checked={filters.priority.includes(level)} />
-                      <ListItemText primary={level} />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <DatePicker
-                  label="From Date"
-                  value={filters.dateRange[0]}
-                  onChange={(date) => handleFilterChange('dateRange', [date, filters.dateRange[1]])}
-                  renderInput={(params) => <TextField {...params} size="small" fullWidth sx={{ mb: 2 }} />}
-                />
-                <DatePicker
-                  label="To Date"
-                  value={filters.dateRange[1]}
-                  onChange={(date) => handleFilterChange('dateRange', [filters.dateRange[0], date])}
-                  renderInput={(params) => <TextField {...params} size="small" fullWidth />}
-                />
-              </LocalizationProvider>
-              
-              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                <Button 
-                  size="small" 
-                  onClick={() => setFilters({
-                    status: [],
-                    priority: [],
-                    dateRange: [null, null],
-                    searchQuery: ''
-                  })}
-                >
-                  Reset
-                </Button>
-                <Button 
-                  variant="contained" 
-                  size="small" 
-                  onClick={() => setAnchorEl(null)}
-                  sx={{ ml: 1 }}
-                >
-                  Apply
-                </Button>
-              </Box>
-            </Box>
-          </Menu>
-        </Box>
+    <Box sx={{ p: 3 }}>
+      {/* Header */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h5" fontWeight="bold" gutterBottom>
+          Water Department Dashboard
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Manage water supply, pipeline issues, and water quality complaints
+        </Typography>
       </Box>
 
-      {/* Search and Bulk Actions */}
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* Search and Actions */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <TextField
-          placeholder="Search sanitation reports..."
+          placeholder="Search water reports..."
           variant="outlined"
           size="small"
           value={filters.searchQuery}
@@ -525,26 +416,25 @@ const Waterdepartment = () => {
           }}
         />
         
-        <Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button 
+            variant="outlined" 
+            startIcon={<FilterList />}
+            onClick={(e) => setAnchorEl(e.currentTarget)}
+          >
+            Filters
+          </Button>
           {selectedIssues.length > 0 && (
-            <>
-              <Typography variant="body2" color="text.secondary" display="inline" mr={2}>
-                {selectedIssues.length} selected
-              </Typography>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<Assignment />}
-                onClick={() => setShowBulkDialog(true)}
-                sx={{ mr: 1 }}
-              >
-                Bulk Actions
-              </Button>
-            </>
+            <Button
+              variant="outlined"
+              startIcon={<Assignment />}
+              onClick={() => setShowBulkDialog(true)}
+            >
+              Bulk Actions ({selectedIssues.length})
+            </Button>
           )}
           <Button
             variant="contained"
-            color="primary"
             startIcon={<Send />}
             onClick={() => {
               setShowMessageDialog(true);
@@ -556,468 +446,385 @@ const Waterdepartment = () => {
         </Box>
       </Box>
 
-      {/* Department Header */}
-      <Box sx={{ mb: 4, p: 3, bgcolor: '#79554810', borderRadius: 2 }}>
-        <Box display="flex" alignItems="center" mb={2}>
-          <Avatar sx={{ bgcolor: '#795548', mr: 2 }}>
-            <CleaningServices />
-          </Avatar>
-          <Box>
-            <Typography variant="h5" fontWeight="bold">
-              Sanitation Department
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Garbage collection, street cleaning, waste management services
-            </Typography>
+      {/* Filter Menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+      >
+        <Box sx={{ p: 2, width: 250 }}>
+          <Typography variant="subtitle1" gutterBottom>Filters</Typography>
+          <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+            <InputLabel>Status</InputLabel>
+            <Select
+              multiple
+              value={filters.status}
+              onChange={(e) => handleFilterChange('status', e.target.value)}
+              renderValue={(selected) => selected.join(', ')}
+            >
+              {statusOptions.map((status) => (
+                <MenuItem key={status} value={status}>
+                  <Checkbox checked={filters.status.includes(status)} />
+                  <ListItemText primary={status} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+            <InputLabel>Priority</InputLabel>
+            <Select
+              multiple
+              value={filters.priority}
+              onChange={(e) => handleFilterChange('priority', e.target.value)}
+              renderValue={(selected) => selected.join(', ')}
+            >
+              {priorityLevels.map((level) => (
+                <MenuItem key={level} value={level}>
+                  <Checkbox checked={filters.priority.includes(level)} />
+                  <ListItemText primary={level} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DatePicker
+              label="From Date"
+              value={filters.dateRange[0]}
+              onChange={(date) => handleFilterChange('dateRange', [date, filters.dateRange[1]])}
+              renderInput={(params) => <TextField {...params} size="small" fullWidth sx={{ mb: 2 }} />}
+            />
+            <DatePicker
+              label="To Date"
+              value={filters.dateRange[1]}
+              onChange={(date) => handleFilterChange('dateRange', [filters.dateRange[0], date])}
+              renderInput={(params) => <TextField {...params} size="small" fullWidth />}
+            />
+          </LocalizationProvider>
+          
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+            <Button 
+              size="small" 
+              onClick={() => setFilters({
+                status: [],
+                priority: [],
+                dateRange: [null, null],
+                searchQuery: ''
+              })}
+            >
+              Reset
+            </Button>
+            <Button 
+              variant="contained" 
+              size="small" 
+              onClick={() => setAnchorEl(null)}
+              sx={{ ml: 1 }}
+            >
+              Apply
+            </Button>
           </Box>
         </Box>
-        
-        {/* Department stats */}
-        <Box sx={{ 
-          display: 'grid', 
-          gap: 2, 
-          gridTemplateColumns: { 
-            xs: '1fr', 
-            sm: 'repeat(2, 1fr)', 
-            md: 'repeat(4, 1fr)' 
-          } 
-        }}>
-          <Card variant="outlined">
-            <CardContent>
-              <Typography color="textSecondary" variant="subtitle2">
-                Total Issues
-              </Typography>
-              <Typography variant="h4">
-                {sanitationIssues.length}
-              </Typography>
+      </Menu>
+
+      {/* Stats Cards */}
+      <Box sx={{ 
+        display: 'grid', 
+        gap: 2, 
+        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+        mb: 3
+      }}>
+        {waterStats.map((stat, index) => (
+          <Card key={index} variant="outlined">
+            <CardContent sx={{ p: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                  <Typography variant="h5">{stat.value}</Typography>
+                  <Typography variant="body2" color="text.secondary">{stat.title}</Typography>
+                </Box>
+                <Avatar sx={{ bgcolor: stat.color + '20', color: stat.color }}>
+                  <stat.icon />
+                </Avatar>
+              </Box>
             </CardContent>
           </Card>
-          <Card variant="outlined">
-            <CardContent>
-              <Typography color="textSecondary" variant="subtitle2">
-                Pending
-              </Typography>
-              <Typography variant="h4" color="#ff9800">
-                {sanitationIssues.filter(issue => issue.status === 'Pending').length}
-              </Typography>
-            </CardContent>
-          </Card>
-          <Card variant="outlined">
-            <CardContent>
-              <Typography color="textSecondary" variant="subtitle2">
-                In Progress
-              </Typography>
-              <Typography variant="h4" color="#2196f3">
-                {sanitationIssues.filter(issue => issue.status === 'In Process').length}
-              </Typography>
-            </CardContent>
-          </Card>
-          <Card variant="outlined">
-            <CardContent>
-              <Typography color="textSecondary" variant="subtitle2">
-                Resolved
-              </Typography>
-              <Typography variant="h4" color="#4caf50">
-                {sanitationIssues.filter(issue => issue.status === 'Solved').length}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Box>
+        ))}
       </Box>
 
-      {/* Tabs for different views within the department */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs 
-          value={activeTab} 
-          onChange={(e, newValue) => setActiveTab(newValue)}
-          aria-label="sanitation department tabs"
-        >
-          <Tab 
-            icon={<BarChartIcon fontSize="small" />} 
-            iconPosition="start"
-            label="Overview" 
-            value="overview" 
-          />
-          <Tab 
-            icon={<MapIcon fontSize="small" />}
-            iconPosition="start"
-            label="Map View" 
-            value="map" 
-          />
-          <Tab 
-            icon={<Assessment fontSize="small" />}
-            iconPosition="start"
-            label="Analytics" 
-            value="analytics" 
-          />
-          <Tab 
-            icon={<People fontSize="small" />}
-            iconPosition="start"
-            label="Team" 
-            value="team" 
-          />
-        </Tabs>
-      </Box>
+      {/* Tabs */}
+      <Tabs 
+        value={activeTab} 
+        onChange={(e, newValue) => setActiveTab(newValue)}
+        sx={{ mb: 3 }}
+      >
+        <Tab label="Overview" value="overview" />
+        <Tab label="Map View" value="map" />
+        <Tab label="Analytics" value="analytics" />
+        <Tab label="Team" value="team" />
+      </Tabs>
 
       {/* Main Content */}
       {activeTab === 'overview' && (
         <>
-          {/* Stats Cards */}
-          <Box sx={{ 
-            display: 'grid', 
-            gap: 3, 
-            gridTemplateColumns: { 
-              xs: '1fr', 
-              sm: 'repeat(2, 1fr)', 
-              lg: 'repeat(4, 1fr)' 
-            }, 
-            mb: 4 
-          }}>
-            {stats.map((stat, index) => (
-              <Card key={index} variant="outlined" sx={{ 
-                borderLeft: `4px solid ${stat.color}`,
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                overflow: 'hidden'
-              }}>
-                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography 
-                        color="textSecondary" 
-                        variant="subtitle2" 
-                        gutterBottom
-                        noWrap  
-                        sx={{
-                          textOverflow: 'ellipsis',
-                          overflow: 'hidden'
-                        }}
-                      >
-                        {stat.title}
-                      </Typography>
-                      <Typography variant="h5" noWrap>{stat.value}</Typography>
-                      <Typography 
-                        variant="caption" 
-                        sx={{ 
-                          color: stat.trendColor,
-                          display: 'flex',
-                          alignItems: 'center',
-                          mt: 0.5,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis'
-                        }}
-                      >
-                        {stat.trend} from last week
-                      </Typography>
-                    </Box>
-                    <Avatar sx={{ 
-                      bgcolor: stat.color + '20', 
-                      color: stat.color,
-                      ml: 1,
-                      flexShrink: 0  
-                    }}>
-                      <stat.icon />
-                    </Avatar>
-                  </Box>
-                </CardContent>
-              </Card>
-            ))}
-          </Box>
-
-          {/* Charts Row */}
-          <Box sx={{ 
-            display: 'grid', 
-            gap: 3, 
-            gridTemplateColumns: { 
-              xs: '1fr', 
-              lg: '1fr 1fr' 
-            }, 
-            mb: 4 
-          }}>
-            <Paper sx={{ p: 2, height: 350, display: 'flex', flexDirection: 'column' }}>
-              <Typography variant="h6" gutterBottom>Sanitation Issues by Status</Typography>
-              <Box sx={{ flex: 1, minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={statusData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={100}
-                      innerRadius={0}
-                      paddingAngle={1}
-                      dataKey="value"
-                      label={({ name, percent, cx, cy, midAngle, innerRadius, outerRadius, value, index }) => {
-                        const RADIAN = Math.PI / 180;
-                        const radius = 25 + outerRadius * 0.5;
-                        const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                        const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                        
-                        const lineEndX = cx + (outerRadius + 5) * Math.cos(-midAngle * RADIAN);
-                        const lineEndY = cy + (outerRadius + 5) * Math.sin(-midAngle * RADIAN);
-                        
-                        const lineStartX = cx + (outerRadius - 5) * Math.cos(-midAngle * RADIAN);
-                        const lineStartY = cy + (outerRadius - 5) * Math.sin(-midAngle * RADIAN);
-                        
-                        const isLeftSide = x < cx;
-                        const textAnchor = isLeftSide ? 'end' : 'start';
-                        const xOffset = isLeftSide ? -10 : 10;
-                        
-                        let yOffset = 0;
-                        if (name === 'In Process') yOffset = 8;
-                        if (name === 'Solved') yOffset = -8;
-                        if (name === 'Pending') yOffset = -5;
-                        if (name === 'Rejected') yOffset = 5;
-                        
-                        return (
-                          <g>
-                            <line
-                              x1={lineStartX}
-                              y1={lineStartY}
-                              x2={lineEndX}
-                              y2={lineEndY}
-                              stroke="#888"
-                              strokeWidth={1}
-                            />
-                            <text
-                              x={x + xOffset}
-                              y={y + yOffset}
-                              fill="#333"
-                              textAnchor={textAnchor}
-                              dominantBaseline="central"
-                              style={{
-                                fontSize: '12px',
-                                fontWeight: 500,
-                                pointerEvents: 'none',
-                                textShadow: '0 0 3px white, 0 0 3px white, 0 0 3px white'
-                              }}
-                            >
-                              {`${name} (${(percent * 100).toFixed(0)}%)`}
-                            </text>
-                          </g>
-                        );
-                      }}
-                    >
-                      {statusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={statusColors[entry.name]} />
-                      ))}
-                    </Pie>
-                    <Legend />
-                    <RechartsTooltip 
-                      formatter={(value, name) => [value, name]}
-                      labelFormatter={(name) => `Status: ${name}`}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </Box>
+          {/* Charts */}
+          <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, mb: 3 }}>
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h6" gutterBottom>Water Issues by Status</Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    dataKey="value"
+                    label={(entry) => `${entry.name}: ${entry.value}`}
+                  >
+                    {statusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={statusColors[entry.name]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip />
+                </PieChart>
+              </ResponsiveContainer>
             </Paper>
 
-            <Paper sx={{ p: 2, height: 300 }}>
-              <Typography variant="h6" gutterBottom>Issues by Category</Typography>
-              <ResponsiveContainer width="100%" height="90%">
-                <BarChart
-                  data={categoryData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  layout="vertical"
-                >
+            <Paper sx={{ p: 2 }}>
+              <Typography variant="h6" gutterBottom>Priority Distribution</Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={priorityData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis dataKey="name" type="category" width={100} />
+                  <XAxis dataKey="priority" />
+                  <YAxis />
                   <RechartsTooltip />
-                  <Bar dataKey="count" fill="#795548" name="Reports" />
+                  <Bar dataKey="count" fill="#2196f3" />
                 </BarChart>
               </ResponsiveContainer>
             </Paper>
           </Box>
 
-          {/* Recent Reports Table */}
-          <Paper elevation={0} variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" component="h2">
-                Recent Sanitation Reports
-              </Typography>
-              <Box>
-                <Typography variant="body2" color="text.secondary" display="inline" mr={2}>
-                  Total: {filteredIssues.length} issues
-                </Typography>
-                <Button 
-                  size="small" 
-                  startIcon={<Notifications />}
-                  onClick={() => {
-                    setShowMessageDialog(true);
-                    setMessageType('notification');
-                  }}
-                >
-                  Notify Team
-                </Button>
-              </Box>
-            </Box>
-            
-            <div style={{ height: 500, width: '100%' }}>
-              <DataGrid
-                rows={filteredIssues}
-                columns={columns}
-                pageSize={7}
-                rowsPerPageOptions={[7, 15, 25]}
-                checkboxSelection
-                disableSelectionOnClick
-                onSelectionModelChange={handleRowSelection}
-                selectionModel={selectedIssues}
-                getRowHeight={() => 'auto'}
-                onSortModelChange={(model) => setSortModel(model)}
-                sortModel={sortModel}
-                sx={{
-                  border: 'none',
-                  '& .MuiDataGrid-cell': {
-                    padding: '12px 16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
-                  },
-                  '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: theme.palette.mode === 'light' ? '#f8f9fa' : '#1e1e1e',
-                    borderRadius: '8px 8px 0 0',
-                    borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
-                  },
-                  '& .MuiDataGrid-columnHeaderTitle': {
-                    fontWeight: 600,
-                  },
-                  '& .MuiDataGrid-row:hover': {
-                    backgroundColor: theme.palette.action.hover,
-                  },
-                }}
-              />
-            </div>
+          {/* Issues Table */}
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>Recent Water Reports</Typography>
+            <DataGrid
+              rows={filteredIssues}
+              columns={columns}
+              pageSize={5}
+              rowsPerPageOptions={[5]}
+              checkboxSelection
+              onSelectionModelChange={handleRowSelection}
+              selectionModel={selectedIssues}
+              onRowClick={(params) => {
+                setSelectedIssue(params.row);
+                setShowIssueDetails(true);
+              }}
+              sx={{ 
+                border: 'none',
+                '& .MuiDataGrid-row:hover': { cursor: 'pointer' }
+              }}
+            />
           </Paper>
         </>
       )}
 
       {activeTab === 'map' && (
-        <Paper sx={{ p: 3, height: '70vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Box textAlign="center">
-            <MapIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              Sanitation Issues Map
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              View garbage collection routes, cleaning schedules, and issue hotspots.
-            </Typography>
-            <Button variant="outlined" startIcon={<Timeline />}>
-              View Collection Routes
-            </Button>
+        <Paper sx={{ p: 3, height: '70vh', minHeight: 500 }}>
+          <Typography variant="h6" gutterBottom>Water Issues Map View (Pune)</Typography>
+          <Box sx={{ width: '100%', height: '60vh', position: 'relative', borderRadius: 2, overflow: 'hidden', boxShadow: 1 }}>
+            <MapContainer center={[18.5204, 73.8567]} zoom={12} style={{ width: '100%', height: '100%' }} scrollWheelZoom={true}>
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {waterMapIssues.map(issue => (
+                <Marker key={issue.id} position={issue.position} icon={waterIcon}>
+                  <Popup>
+                    <Typography variant="subtitle2">{issue.title}</Typography>
+                    <Typography variant="body2" color="text.secondary">{issue.description}</Typography>
+                    <Typography variant="caption" color="primary">Category: {issue.category}</Typography>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </Box>
+          <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <img src={waterIcon.options.iconUrl} alt="Water" style={{ width: 24, height: 24 }} />
+            <Typography variant="body2">Water Supply Issues</Typography>
           </Box>
         </Paper>
       )}
 
       {activeTab === 'analytics' && (
-        <Box>
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>Water Department Analytics</Typography>
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3, height: 400 }}>
-                <Typography variant="h6" gutterBottom>Response Times</Typography>
-                <ResponsiveContainer width="100%" height="90%">
-                  <BarChart
-                    data={[
-                      { period: 'Jan', avgTime: 12, target: 24 },
-                      { period: 'Feb', avgTime: 18, target: 24 },
-                      { period: 'Mar', avgTime: 8, target: 24 },
-                      { period: 'Apr', avgTime: 30, target: 24 },
-                      { period: 'May', avgTime: 15, target: 24 },
-                    ]}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="period" />
-                    <YAxis label={{ value: 'Hours', angle: -90, position: 'insideLeft' }} />
-                    <RechartsTooltip />
-                    <Legend />
-                    <Bar dataKey="avgTime" name="Average Response Time" fill="#795548" />
-                    <Bar dataKey="target" name="Target" fill="#82ca9d" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Paper>
+              <Typography variant="subtitle1" gutterBottom>Response Time Trend</Typography>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart
+                  data={[
+                    { month: 'Jan', time: 24 },
+                    { month: 'Feb', time: 18 },
+                    { month: 'Mar', time: 22 },
+                    { month: 'Apr', time: 15 },
+                    { month: 'May', time: 20 },
+                  ]}
+                >
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <RechartsTooltip />
+                  <Bar dataKey="time" fill="#2196f3" />
+                </BarChart>
+              </ResponsiveContainer>
             </Grid>
             <Grid item xs={12} md={6}>
-              <Paper sx={{ p: 3, height: 400 }}>
-                <Typography variant="h6" gutterBottom>Monthly Trend</Typography>
-                <ResponsiveContainer width="100%" height="90%">
-                  <LineChart
-                    data={[
-                      { month: 'Jan', reported: 4, resolved: 2 },
-                      { month: 'Feb', reported: 3, resolved: 1 },
-                      { month: 'Mar', reported: 6, resolved: 3 },
-                      { month: 'Apr', reported: 2, resolved: 4 },
-                      { month: 'May', reported: 5, resolved: 2 },
-                    ]}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <RechartsTooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="reported" name="Reported" stroke="#795548" />
-                    <Line type="monotone" dataKey="resolved" name="Resolved" stroke="#82ca9d" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Paper>
+              <Typography variant="subtitle1" gutterBottom>Monthly Reports</Typography>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart
+                  data={[
+                    { month: 'Jan', reported: 8, resolved: 5 },
+                    { month: 'Feb', reported: 6, resolved: 4 },
+                    { month: 'Mar', reported: 10, resolved: 7 },
+                    { month: 'Apr', reported: 7, resolved: 6 },
+                    { month: 'May', reported: 9, resolved: 7 },
+                  ]}
+                >
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <RechartsTooltip />
+                  <Line type="monotone" dataKey="reported" stroke="#2196f3" />
+                  <Line type="monotone" dataKey="resolved" stroke="#4caf50" />
+                </LineChart>
+              </ResponsiveContainer>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" gutterBottom>Issue Types</Typography>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart
+                  data={[
+                    { type: 'Shortage', count: 12 },
+                    { type: 'Pipeline', count: 8 },
+                    { type: 'Quality', count: 5 },
+                    { type: 'Pressure', count: 7 },
+                    { type: 'Other', count: 3 },
+                  ]}
+                >
+                  <XAxis dataKey="type" />
+                  <YAxis />
+                  <RechartsTooltip />
+                  <Bar dataKey="count" fill="#2196f3" />
+                </BarChart>
+              </ResponsiveContainer>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle1" gutterBottom>Area-wise Distribution</Typography>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart
+                  data={[
+                    { area: 'Kothrud', issues: 8 },
+                    { area: 'Hadapsar', issues: 6 },
+                    { area: 'Koregaon', issues: 5 },
+                    { area: 'Shivaji', issues: 7 },
+                    { area: 'FC Road', issues: 4 },
+                  ]}
+                >
+                  <XAxis dataKey="area" />
+                  <YAxis />
+                  <RechartsTooltip />
+                  <Bar dataKey="issues" fill="#4caf50" />
+                </BarChart>
+              </ResponsiveContainer>
             </Grid>
           </Grid>
-        </Box>
+        </Paper>
       )}
 
       {activeTab === 'team' && (
-        <Paper sx={{ p: 3, minHeight: '60vh' }}>
-          <Typography variant="h6" gutterBottom>Sanitation Team</Typography>
-          <Typography color="text.secondary" paragraph>
-            Manage your sanitation team members and assignments.
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 3 }}>
-            <Card sx={{ p: 2, width: 200, textAlign: 'center' }}>
-              <People color="primary" sx={{ fontSize: 40, mb: 1 }} />
-              <Typography variant="h5">45</Typography>
-              <Typography variant="body2" color="text.secondary">Team Members</Typography>
-            </Card>
-            <Card sx={{ p: 2, width: 200, textAlign: 'center' }}>
-              <DirectionsCar color="primary" sx={{ fontSize: 40, mb: 1 }} />
-              <Typography variant="h5">12</Typography>
-              <Typography variant="body2" color="text.secondary">Collection Vehicles</Typography>
-            </Card>
-            <Card sx={{ p: 2, width: 200, textAlign: 'center' }}>
-              <CheckCircleOutline color="primary" sx={{ fontSize: 40, mb: 1 }} />
-              <Typography variant="h5">85%</Typography>
-              <Typography variant="body2" color="text.secondary">Efficiency Rate</Typography>
-            </Card>
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h6" gutterBottom>Water Department Team</Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card variant="outlined">
+                <CardContent sx={{ textAlign: 'center' }}>
+                  <People sx={{ fontSize: 40, color: '#2196f3', mb: 1 }} />
+                  <Typography variant="h5">32</Typography>
+                  <Typography variant="body2">Team Members</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card variant="outlined">
+                <CardContent sx={{ textAlign: 'center' }}>
+                  <WaterDrop sx={{ fontSize: 40, color: '#2196f3', mb: 1 }} />
+                  <Typography variant="h5">8</Typography>
+                  <Typography variant="body2">Water Tankers</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card variant="outlined">
+                <CardContent sx={{ textAlign: 'center' }}>
+                  <Build sx={{ fontSize: 40, color: '#2196f3', mb: 1 }} />
+                  <Typography variant="h5">15</Typography>
+                  <Typography variant="body2">Repair Teams</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <Card variant="outlined">
+                <CardContent sx={{ textAlign: 'center' }}>
+                  <CheckCircleOutline sx={{ fontSize: 40, color: '#2196f3', mb: 1 }} />
+                  <Typography variant="h5">92%</Typography>
+                  <Typography variant="body2">Efficiency Rate</Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+          
+          <Box sx={{ mt: 4 }}>
+            <Typography variant="h6" gutterBottom>Team Contact</Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="subtitle2" gutterBottom>Emergency Contact</Typography>
+                    <Typography variant="body1">+91 9876543210</Typography>
+                    <Typography variant="body2" color="text.secondary">Available 24/7</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="subtitle2" gutterBottom>Control Room</Typography>
+                    <Typography variant="body1">020-12345678</Typography>
+                    <Typography variant="body2" color="text.secondary">9 AM - 6 PM</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
           </Box>
         </Paper>
       )}
 
       {/* Bulk Action Dialog */}
-      <Dialog open={showBulkDialog} onClose={() => setShowBulkDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog open={showBulkDialog} onClose={() => setShowBulkDialog(false)}>
         <DialogTitle>Bulk Actions</DialogTitle>
         <DialogContent>
-          <Typography variant="body1" paragraph>
-            You have selected {selectedIssues.length} sanitation issues. What would you like to do with them?
+          <Typography sx={{ mb: 2 }}>
+            Apply action to {selectedIssues.length} selected water issues:
           </Typography>
-          
-          <FormControl fullWidth variant="outlined" size="small" sx={{ mb: 2 }}>
-            <InputLabel>Action</InputLabel>
+          <FormControl fullWidth>
             <Select
               value={bulkAction}
               onChange={(e) => setBulkAction(e.target.value)}
-              label="Action"
+              displayEmpty
             >
-              <MenuItem value="">
-                <em>Select an action</em>
-              </MenuItem>
+              <MenuItem value="">Select Action</MenuItem>
               <MenuItem value="In Process">Mark as In Process</MenuItem>
               <MenuItem value="Assigned">Assign to Team</MenuItem>
               <MenuItem value="Solved">Mark as Solved</MenuItem>
-              <MenuItem value="Rejected">Reject Selected</MenuItem>
+              <MenuItem value="Rejected">Reject Issues</MenuItem>
             </Select>
           </FormControl>
         </DialogContent>
@@ -1025,179 +832,92 @@ const Waterdepartment = () => {
           <Button onClick={() => setShowBulkDialog(false)}>Cancel</Button>
           <Button 
             onClick={handleBulkAction} 
-            variant="contained" 
-            color="primary"
+            variant="contained"
             disabled={!bulkAction}
           >
-            Apply to {selectedIssues.length} Issues
+            Apply
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Issue Details Dialog */}
-      <Dialog 
-        open={showIssueDetails} 
-        onClose={() => setShowIssueDetails(false)} 
-        maxWidth="md" 
-        fullWidth
-      >
+      <Dialog open={showIssueDetails} onClose={() => setShowIssueDetails(false)} maxWidth="sm" fullWidth>
         {selectedIssue && (
           <>
-            <DialogTitle>Sanitation Issue Details</DialogTitle>
+            <DialogTitle>{selectedIssue.title}</DialogTitle>
             <DialogContent>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={8}>
-                  <Typography variant="h6" gutterBottom>{selectedIssue.title}</Typography>
-                  <Typography variant="body1" paragraph>{selectedIssue.description}</Typography>
-                  
-                  <Box sx={{ mb: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-                    <Typography variant="subtitle2" gutterBottom>Location</Typography>
-                    <Typography>{selectedIssue.location?.address || 'Location not specified'}</Typography>
-                    
-                    <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                      <Chip 
-                        label={selectedIssue.status} 
-                        size="small" 
-                        sx={{ 
-                          backgroundColor: statusColors[selectedIssue.status] + '1a',
-                          color: statusColors[selectedIssue.status],
-                          fontWeight: 500,
-                          minWidth: '80px',
-                          '& .MuiChip-label': {
-                            px: 1,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: 'block',
-                          },
-                        }} 
-                      />
-                      <Chip 
-                        label={selectedIssue.priority || 'Medium'} 
-                        size="small" 
-                        variant="outlined"
-                        sx={{ 
-                          borderColor: priorityColors[selectedIssue.priority || 'Medium'], 
-                          color: priorityColors[selectedIssue.priority || 'Medium'] 
-                        }} 
-                      />
-                    </Box>
-                  </Box>
-                  
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" gutterBottom>Attachments</Typography>
-                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                      {selectedIssue.images?.length > 0 ? (
-                        selectedIssue.images.map((img, idx) => (
-                          <Box 
-                            key={idx} 
-                            sx={{ 
-                              width: 100, 
-                              height: 100, 
-                              borderRadius: 1, 
-                              overflow: 'hidden',
-                              border: '1px solid',
-                              borderColor: 'divider'
-                            }}
-                          >
-                            <img 
-                              src={img} 
-                              alt={`Attachment ${idx + 1}`} 
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                            />
-                          </Box>
-                        ))
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">No attachments</Typography>
-                      )}
-                    </Box>
-                  </Box>
-                  
-                  <Box>
-                    <Typography variant="subtitle2" gutterBottom>Update Status</Typography>
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                      {statusOptions.map((status) => (
-                        <Button
-                          key={status}
-                          variant={selectedIssue.status === status ? 'contained' : 'outlined'}
-                          size="small"
-                          onClick={() => {
-                            handleStatusChange(selectedIssue.id, status);
-                            setSelectedIssue({ ...selectedIssue, status });
-                          }}
-                          sx={{ 
-                            textTransform: 'none',
-                            ...(selectedIssue.status === status && {
-                              bgcolor: statusColors[status],
-                              '&:hover': { bgcolor: statusColors[status] }
-                            })
-                          }}
-                        >
-                          {status}
-                        </Button>
-                      ))}
-                    </Box>
+              <Typography gutterBottom>{selectedIssue.description}</Typography>
+              
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">Status</Typography>
+                  <Chip 
+                    label={selectedIssue.status} 
+                    size="small"
+                    sx={{ 
+                      bgcolor: statusColors[selectedIssue.status] + '20',
+                      color: statusColors[selectedIssue.status]
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body2" color="text.secondary">Priority</Typography>
+                  <Chip 
+                    label={selectedIssue.priority} 
+                    size="small"
+                    sx={{ 
+                      bgcolor: priorityColors[selectedIssue.priority] + '20',
+                      color: priorityColors[selectedIssue.priority]
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="body2" color="text.secondary">Location</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <LocationOn fontSize="small" color="action" />
+                    <Typography>{selectedIssue.location.address}</Typography>
                   </Box>
                 </Grid>
-                <Grid item xs={12} md={4}>
-                  <Card variant="outlined" sx={{ mb: 2 }}>
-                    <CardContent>
-                      <Typography variant="subtitle2" gutterBottom>Details</Typography>
-                      <Box sx={{ '& > div': { mb: 1 } }}>
-                        <div><strong>Reported:</strong> {new Date(selectedIssue.date).toLocaleDateString()}</div>
-                        <div><strong>Category:</strong> {selectedIssue.category || 'N/A'}</div>
-                        <div><strong>Department:</strong> Sanitation</div>
-                        <div><strong>Priority:</strong> {selectedIssue.priority || 'Medium'}</div>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography variant="subtitle2" gutterBottom>Reporter</Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Avatar sx={{ width: 40, height: 40, mr: 1.5 }}>
-                          {selectedIssue.reporter?.name?.[0] || 'U'}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body2" fontWeight={500}>
-                            {selectedIssue.reporter?.name || 'Anonymous User'}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {selectedIssue.reporter?.email || 'No contact information'}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Button 
-                        fullWidth 
-                        variant="outlined" 
-                        size="small" 
-                        startIcon={<Email />}
-                        onClick={() => {
-                          setShowMessageDialog(true);
-                          setMessageType('email');
-                          setShowIssueDetails(false);
-                        }}
-                      >
-                        Send Message
-                      </Button>
-                    </CardContent>
-                  </Card>
+                <Grid item xs={12}>
+                  <Typography variant="body2" color="text.secondary">Reporter</Typography>
+                  <Typography>{selectedIssue.reporter.name} ({selectedIssue.reporter.email})</Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="body2" color="text.secondary">Reported Date</Typography>
+                  <Typography>{new Date(selectedIssue.date).toLocaleDateString()}</Typography>
                 </Grid>
               </Grid>
+
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>Update Status</Typography>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  {statusOptions.map((status) => (
+                    <Button
+                      key={status}
+                      variant={selectedIssue.status === status ? 'contained' : 'outlined'}
+                      size="small"
+                      onClick={() => {
+                        handleStatusChange(selectedIssue.id, status);
+                        setSelectedIssue({ ...selectedIssue, status });
+                      }}
+                    >
+                      {status}
+                    </Button>
+                  ))}
+                </Box>
+              </Box>
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setShowIssueDetails(false)}>Close</Button>
               <Button 
-                variant="contained" 
-                color="primary"
+                variant="contained"
                 onClick={() => {
+                  setShowMessageDialog(true);
+                  setMessageType('email');
                   setShowIssueDetails(false);
-                  setSelectedIssues([selectedIssue.id]);
-                  setShowBulkDialog(true);
                 }}
               >
-                Take Action
+                Contact Reporter
               </Button>
             </DialogActions>
           </>
@@ -1205,100 +925,50 @@ const Waterdepartment = () => {
       </Dialog>
 
       {/* Message Dialog */}
-      <Dialog 
-        open={showMessageDialog} 
-        onClose={() => setShowMessageDialog(false)} 
-        maxWidth="sm" 
-        fullWidth
-      >
-        <DialogTitle>
-          {messageType === 'email' ? 'Send Email Update' : 'Send Team Notification'}
-        </DialogTitle>
+      <Dialog open={showMessageDialog} onClose={() => setShowMessageDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Send Message</DialogTitle>
         <DialogContent>
-          <Box sx={{ mt: 2, mb: 3 }}>
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Recipients</InputLabel>
-              <Select
-                multiple
-                value={selectedIssues.length > 0 ? ['selected'] : ['all']}
-                renderValue={(selected) => {
-                  if (selected.includes('selected')) {
-                    return `${selectedIssues.length} selected issues`;
-                  }
-                  return 'All team members';
-                }}
-              >
-                <MenuItem value="all">All Team Members</MenuItem>
-                <MenuItem value="selected" disabled={selectedIssues.length === 0}>
-                  {selectedIssues.length} Selected Issues
-                </MenuItem>
-              </Select>
-            </FormControl>
-            
-            <TextField
-              label="Subject"
-              fullWidth
-              margin="normal"
-              variant="outlined"
-            />
-            
-            <TextField
-              label="Message"
-              fullWidth
-              multiline
-              rows={6}
-              margin="normal"
-              variant="outlined"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder={`Type your ${messageType === 'email' ? 'email' : 'notification'} message here...`}
-            />
-            
-            <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <AttachFile fontSize="small" color="action" />
-              <Typography variant="body2" color="text.secondary">
-                Attach files (optional)
-              </Typography>
-            </Box>
-          </Box>
+          <TextField
+            label="Subject"
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            label="Message"
+            fullWidth
+            multiline
+            rows={4}
+            margin="normal"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowMessageDialog(false)}>Cancel</Button>
           <Button 
-            variant="contained" 
-            color="primary"
+            variant="contained"
             onClick={() => {
               setShowMessageDialog(false);
-              showSnackbar(
-                messageType === 'email' 
-                  ? 'Email sent successfully' 
-                  : 'Notification sent successfully',
-                'success'
-              );
+              showSnackbar('Message sent successfully', 'success');
             }}
           >
-            {messageType === 'email' ? 'Send Email' : 'Send Notification'}
+            Send
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar for notifications */}
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={6000} 
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
+      {/* Snackbar */}
+      {snackbar.open && (
         <Alert 
-          onClose={() => setSnackbar({ ...snackbar, open: false })} 
           severity={snackbar.severity}
-          sx={{ width: '100%' }}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          sx={{ position: 'fixed', bottom: 20, right: 20, minWidth: 300 }}
         >
           {snackbar.message}
         </Alert>
-      </Snackbar>
+      )}
     </Box>
   );
 };
 
-export default Waterdepartment;
+export default WaterDashboard;

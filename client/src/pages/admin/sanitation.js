@@ -588,7 +588,7 @@ const SanitationDashboard = () => {
     },
   ];
 
-  // Stats cards for Sanitation department
+
 
 
   // Render the component
