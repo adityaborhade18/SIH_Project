@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
-import Loginn from '../../pages/loginn.js';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
+import axios from 'axios';
 
 const Navbar = () => {
     const navLinks = [
@@ -11,40 +11,97 @@ const Navbar = () => {
         { name: 'About', path: '/' },
     ];
 
-    const ref = useRef(null);
     const navigate = useNavigate();
-
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [user, setUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // ⭐ NEW STATE (Check login status)
-    const [isLoggedIn, setIsLoggedIn] = useState(
-        localStorage.getItem("userLoggedIn") === "true"
-    );
+    // Check authentication status on component mount and on route changes
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    const { data } = await axios.get('http://localhost:5000/api/user/me', {
+                        headers: { Authorization: `Bearer ${token}` },
+                        withCredentials: true
+                    });
+                    if (data?.success && data.user) {
+                        setIsLoggedIn(true);
+                        setUser(data.user);
+                        return;
+                    }
+                }
+                // If we get here, not properly authenticated
+                setIsLoggedIn(false);
+                setUser(null);
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                localStorage.removeItem('token');
+                setIsLoggedIn(false);
+                setUser(null);
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-    const [showUserLogin, setShowUserLogin] = useState(false);
+        checkAuth();
+        
+        // Listen for storage events to handle login/logout from other tabs
+        const handleStorageChange = (e) => {
+            if (e.key === 'token') {
+                checkAuth();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, [navigate]);
 
     useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 10);
-        };
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
+        const handleScroll = () => setIsScrolled(window.scrollY > 10);
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // ⭐ Call this after login success
-    const handleLoginSuccess = () => {
-        setIsLoggedIn(true);
-        localStorage.setItem("userLoggedIn", "true");
-        setShowUserLogin(false);
+    const handleLoginClick = (e) => {
+        e.preventDefault();
+        // Only navigate if we're not already on the login page
+        if (window.location.pathname !== '/loginn') {
+            navigate('/loginn', { 
+                state: { from: window.location.pathname },
+                replace: true
+            });
+        }
     };
 
-    // ⭐ Logout function
-    const handleLogout = () => {
-        setIsLoggedIn(false);
-        localStorage.removeItem("userLoggedIn");
-        toast.success("Logged out successfully");
-        navigate("/");
+    const handleLogout = async () => {
+        try {
+            await axios.post('http://localhost:5000/api/user/logout', {}, {
+                withCredentials: true,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            // Clear all auth related data
+            localStorage.removeItem('token');
+            
+            // Update state
+            setIsLoggedIn(false);
+            setUser(null);
+            
+            // Show success message
+            toast.success('Logged out successfully');
+            
+            // Redirect to home and force a full page reload to reset all states
+            window.location.href = '/';
+        }
     };
 
     return (
@@ -83,21 +140,28 @@ const Navbar = () => {
                         <line x1="21" y1="21" x2="16.65" y2="16.65" />
                     </svg>
 
-                    {/* ⭐ LOGIN / LOGOUT BUTTON */}
-                    {!isLoggedIn ? (
+                    {/* Login / Logout Button */}
+                    {isLoading ? (
+                        <div className="px-8 py-2.5">Loading...</div>
+                    ) : !isLoggedIn ? (
                         <button
-                            className="px-8 py-2.5 rounded-full ml-4 bg-black text-white"
-                            onClick={() => setShowUserLogin(true)}
+                            onClick={handleLoginClick}
+                            className="px-8 py-2.5 rounded-full ml-4 bg-black text-white hover:bg-gray-800 transition-colors"
                         >
                             Login
                         </button>
                     ) : (
-                        <button
-                            className="px-8 py-2.5 rounded-full ml-4 bg-red-600 text-white"
-                            onClick={handleLogout}
-                        >
-                            Logout
-                        </button>
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm font-medium">
+                                Hello, {user?.name || 'User'}
+                            </span>
+                            <button
+                                onClick={handleLogout}
+                                className="px-6 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                            >
+                                Logout
+                            </button>
+                        </div>
                     )}
                 </div>
 
@@ -110,24 +174,6 @@ const Navbar = () => {
                     </svg>
                 </div>
             </nav>
-
-            {/* ⭐ LOGIN MODAL POPUP */}
-            {showUserLogin && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
-                    <div className="bg-white p-6 rounded-lg w-[90%] md:w-[30%] relative">
-
-                        <button
-                            className="absolute top-24 right-10 text-gray-600"
-                            onClick={() => setShowUserLogin(false)}
-                        >
-                            ✕
-                        </button>
-
-                        {/* Pass login success callback */}
-                        <Loginn onLoginSuccess={handleLoginSuccess} />
-                    </div>
-                </div>
-            )}
 
         </div>
     );

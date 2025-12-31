@@ -149,14 +149,17 @@ const isAdminPath = useLocation().pathname.startsWith("/admin");
               <Route path="/forgot-password" element={<ForgotPassword />} />
               
               {/* Public routes that shouldn't be accessible when logged in */}
-              <Route 
+              {/* <Route 
                 path="/loginn" 
                 element={
                   <PublicRoute>
                     <Loginn />
                   </PublicRoute>
                 } 
-              />
+              /> */}
+               
+               <Route path="/loginn" element={<Loginn />} />
+
 
               {/* Protected Routes */}
               <Route
