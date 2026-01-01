@@ -6,9 +6,11 @@ import axios from 'axios';
 const Navbar = () => {
     const navLinks = [
         { name: 'Home', path: '/' },
-        { name: 'Products', path: '/' },
-        { name: 'Contact', path: '/' },
-        { name: 'About', path: '/' },
+        { name: 'Report Issue', path: 'report-issue' },
+        { name: 'Track Issue', path: 'track-issue' },
+        { name: 'About', path: '/about' },
+        { name: 'Contact', path: '/contact' },
+       
     ];
 
     const navigate = useNavigate();
@@ -127,10 +129,6 @@ const Navbar = () => {
                             <div className="bg-gray-700 h-0.5 w-0 group-hover:w-full transition-all duration-300" />
                         </a>
                     ))}
-
-                    <button className="border px-4 py-1 text-sm font-light rounded-full cursor-pointer text-black">
-                        New Launch
-                    </button>
                 </div>
 
                 {/* Desktop Right */}

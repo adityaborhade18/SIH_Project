@@ -73,15 +73,15 @@
 //     const locationData = typeof locationString === 'string' 
 //       ? JSON.parse(locationString) 
 //       : locationString;
-    
+
 //     const coordinates = locationData.coordinates || [];
 //     const lat = coordinates[1] || null; // latitude
 //     const lng = coordinates[0] || null; // longitude
-    
+
 //     const address = locationData.address || 
 //                   locationData.formattedAddress || 
 //                   (lat && lng ? `Lat: ${lat}, Lng: ${lng}` : 'Location data not available');
-    
+
 //     return {
 //       lat,
 //       lng,
@@ -146,7 +146,7 @@
 
 //   const calculateDistance = (lat1, lon1, lat2, lon2) => {
 //     if (!lat1 || !lon1 || !lat2 || !lon2) return null;
-    
+
 //     const R = 6371;
 //     const dLat = (lat2 - lat1) * Math.PI / 180;
 //     const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -156,7 +156,7 @@
 //       Math.sin(dLon/2) * Math.sin(dLon/2);
 //     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 //     const distanceKm = R * c;
-    
+
 //     if (distanceKm < 1) {
 //       return `${(distanceKm * 1000).toFixed(0)} meters away`;
 //     }
@@ -176,7 +176,7 @@
 //   const shareIssue = async () => {
 //     const issueLocation = parseLocationData(issue.location);
 //     const text = `Issue: ${issue.title}\nLocation: ${issueLocation.address}\nStatus: ${issue.status}`;
-    
+
 //     if (navigator.share) {
 //       try {
 //         await navigator.share({
@@ -208,7 +208,7 @@
 //   const openDirections = () => {
 //     const issueLocation = parseLocationData(issue.location);
 //     if (!issueLocation.lat || !issueLocation.lng || !userLocation) return;
-    
+
 //     const url = `https://www.openstreetmap.org/directions?engine=osrm_car&route=${userLocation.lat}%2C${userLocation.lng}%3B${issueLocation.lat}%2C${issueLocation.lng}`;
 //     window.open(url, '_blank');
 //   };
@@ -292,7 +292,7 @@
 //                 Issue Details
 //               </Typography>
 //             </Breadcrumbs>
-            
+
 //             <Tooltip title="Share this issue">
 //               <IconButton onClick={shareIssue} color="primary">
 //                 <Share />
@@ -305,7 +305,7 @@
 //       {/* Main Content */}
 //       <Container maxWidth="lg" sx={{ mt: 4 }}>
 //         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          
+
 //           {/* Issue Header Card */}
 //           <Card elevation={3} sx={{ borderRadius: 3 }}>
 //             <Box sx={{ p: 3, bgcolor: 'primary.main', color: 'white', borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
@@ -337,10 +337,10 @@
 
 //           {/* Two Column Layout */}
 //           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 3 }}>
-            
+
 //             {/* Left Column - Main Content */}
 //             <Stack spacing={3}>
-              
+
 //               {/* Description Card */}
 //               <Card elevation={2} sx={{ borderRadius: 3 }}>
 //                 <Box sx={{ p: 2.5, bgcolor: 'grey.50', borderBottom: '1px solid', borderColor: 'divider' }}>
@@ -425,7 +425,7 @@
 
 //             {/* Right Column - Sidebar */}
 //             <Stack spacing={3}>
-              
+
 //               {/* Location Details */}
 //               <Card elevation={2} sx={{ borderRadius: 3 }}>
 //                 <Box sx={{ p: 2.5, bgcolor: 'warning.main', color: 'white', borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
@@ -492,7 +492,7 @@
 //                     >
 //                       View on Map
 //                     </Button>
-                    
+
 //                     <Button 
 //                       variant="outlined" 
 //                       startIcon={<GpsFixed />}
@@ -540,7 +540,7 @@
 //                       >
 //                         Edit Map
 //                       </Button>
-                      
+
 //                       <Button 
 //                         variant="outlined" 
 //                         size="small"
@@ -666,24 +666,53 @@ const IssueDetails = () => {
   const issueLocation = issue ? parseLocationData(issue.location) : {};
 
   const osmEmbedUrl = issueLocation.lat
-    ? `https://www.openstreetmap.org/export/embed.html?bbox=${
-        issueLocation.lng - 0.01
-      },${issueLocation.lat - 0.01},${issueLocation.lng + 0.01},${
-        issueLocation.lat + 0.01
-      }&marker=${issueLocation.lat}%2C${issueLocation.lng}`
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${issueLocation.lng - 0.01
+    },${issueLocation.lat - 0.01},${issueLocation.lng + 0.01},${issueLocation.lat + 0.01
+    }&marker=${issueLocation.lat}%2C${issueLocation.lng}`
     : null;
 
   const getUserLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setLocationError(''); // Clear previous errors
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setUserLocation({
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         });
-        setCopySuccess("Location detected");
-        setTimeout(() => setCopySuccess(""), 2000);
+        setCopySuccess("✅ Location detected successfully!");
+        setTimeout(() => setCopySuccess(""), 3000);
       },
-      () => setLocationError("Unable to fetch your location.")
+      (error) => {
+        let errorMessage = '';
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "❌ Location permission denied. Click the lock icon 🔒 next to the URL and enable location access.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information unavailable";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "Location request timed out. Please try again.";
+            break;
+          default:
+            errorMessage = "Unable to fetch your location";
+        }
+
+        setLocationError(errorMessage);
+        setTimeout(() => setLocationError(""), 10000); // Show error for 10 seconds
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
     );
   };
 
@@ -697,8 +726,8 @@ const IssueDetails = () => {
     const a =
       Math.sin(dLat / 2) ** 2 +
       Math.cos(lat1 * Math.PI / 180) *
-        Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon / 2) ** 2;
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) ** 2;
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
@@ -784,18 +813,18 @@ const IssueDetails = () => {
               <Typography variant="h3" fontWeight="bold" gutterBottom>
                 {issue.title}
               </Typography>
-              
+
               <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 2 }}>
-                <Chip 
-                  label={issue.status} 
+                <Chip
+                  label={issue.status}
                   color={issue.status === 'resolved' ? 'success' : 'primary'}
                   variant="filled"
                 />
-                <Chip 
-                  label={`Priority: ${issue.priority}`} 
+                <Chip
+                  label={`Priority: ${issue.priority}`}
                   color={
-                    issue.priority === 'high' ? 'error' : 
-                    issue.priority === 'medium' ? 'warning' : 'info'
+                    issue.priority === 'high' ? 'error' :
+                      issue.priority === 'medium' ? 'warning' : 'info'
                   }
                 />
               </Box>
@@ -827,11 +856,11 @@ const IssueDetails = () => {
                   component="img"
                   src={issue.image}
                   alt="Issue"
-                  sx={{ 
-                    width: "100%", 
-                    borderRadius: 2, 
-                    maxHeight: 400, 
-                    objectFit: "cover", 
+                  sx={{
+                    width: "100%",
+                    borderRadius: 2,
+                    maxHeight: 400,
+                    objectFit: "cover",
                     cursor: "pointer",
                     transition: 'transform 0.2s',
                     '&:hover': {
@@ -935,10 +964,10 @@ const IssueDetails = () => {
               </Typography>
               {issueLocation.lat ? (
                 <Box sx={{ height: 400, borderRadius: 2, overflow: "hidden", mt: 2 }}>
-                  <iframe 
-                    width="100%" 
-                    height="100%" 
-                    frameBorder="0" 
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    frameBorder="0"
                     src={osmEmbedUrl}
                     style={{ border: 0 }}
                     title="Issue location map"

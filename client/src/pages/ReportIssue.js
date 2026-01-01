@@ -39,19 +39,53 @@ export default function ReportIssue() {
 
   const [errors, setErrors] = useState({});
   const [loadingLocation, setLoadingLocation] = useState(true);
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState(null);
 
-  // Auto detect location on load
+  // Check if user is authenticated on mount
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Please login to report an issue');
+      navigate('/login');
+    }
+  }, [navigate]);
+
+  // Check geolocation permission status on mount
+  useEffect(() => {
+    checkPermissionStatus();
     detectCurrentLocation();
   }, []);
 
+  const checkPermissionStatus = async () => {
+    if ('permissions' in navigator) {
+      try {
+        const result = await navigator.permissions.query({ name: 'geolocation' });
+        setPermissionStatus(result.state);
+
+        // Listen for permission changes
+        result.addEventListener('change', () => {
+          setPermissionStatus(result.state);
+          if (result.state === 'granted') {
+            setPermissionDenied(false);
+            detectCurrentLocation();
+          }
+        });
+      } catch (err) {
+        console.log('Permission API not supported');
+      }
+    }
+  };
+
   const detectCurrentLocation = () => {
     if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
       setLoadingLocation(false);
       return;
     }
 
     setLoadingLocation(true);
+    setPermissionDenied(false);
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -69,6 +103,7 @@ export default function ReportIssue() {
             position: [lat, lng],
             address: data.display_name || `Lat: ${lat}, Lng: ${lng}`,
           }));
+          toast.success('Location detected successfully!');
         } catch (err) {
           // fallback to coords if reverse geocode fails
           setFormData((prev) => ({
@@ -80,8 +115,24 @@ export default function ReportIssue() {
           setLoadingLocation(false);
         }
       },
-      () => {
+      (error) => {
         setLoadingLocation(false);
+
+        // Handle different error codes
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setPermissionDenied(true);
+            toast.error('Location access denied. Please enable location permissions.');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            toast.error('Location information unavailable');
+            break;
+          case error.TIMEOUT:
+            toast.error('Location request timed out');
+            break;
+          default:
+            toast.error('An unknown error occurred while getting location');
+        }
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -149,73 +200,96 @@ export default function ReportIssue() {
   //   e.preventDefault();
   //   if (!validateForm()) return;
   //   // Submit form data to backend or API
-   
+
   //   // Reset form
-    
-    
+
+
   // };
-  
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
 
-  if (!validateForm()) {
-    setLoading(false);
-    return;
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    // Build location object in correct format
-    const locationObject = {
-      type: "Point",
-      coordinates: [
-        formData.position[1], // lng FIRST
-        formData.position[0]  // lat SECOND
-      ],
-      address: formData.address,
-    };
-
-    const form = new FormData();
-    form.append("title", formData.title);
-    form.append("description", formData.description);
-    form.append("priority", formData.priority);
-
-    // Must send as string because backend parses JSON
-    form.append("location", JSON.stringify(locationObject));
-
-    if (formData.image) {
-      form.append("image", formData.image);
+    if (!validateForm()) {
+      setLoading(false);
+      return;
     }
 
-    const response = await axios.post(
-      "http://localhost:5000/api/user/createissue",
-      form,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
+    // Check if user is authenticated
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Please login to report an issue');
+      setLoading(false);
+      navigate('/login');
+      return;
+    }
+
+    try {
+      // Build location object in correct format
+      const locationObject = {
+        type: "Point",
+        coordinates: [
+          formData.position[1], // lng FIRST
+          formData.position[0]  // lat SECOND
+        ],
+        address: formData.address,
+      };
+
+      const form = new FormData();
+      form.append("title", formData.title);
+      form.append("description", formData.description);
+      form.append("priority", formData.priority);
+
+      // Must send as string because backend parses JSON
+      form.append("location", JSON.stringify(locationObject));
+
+      if (formData.image) {
+        form.append("image", formData.image);
       }
-    );
 
-    toast.success("Issue reported successfully!");
+      const response = await axios.post(
+        "http://localhost:5000/api/user/createissue",
+        form,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            "Authorization": `Bearer ${token}`
+          },
+        }
+      );
 
-    // Reset form
-    setFormData({
-      title: "",
-      priority: "",
-      description: "",
-      image: null,
-      imagePreview: null,
-      position: null,
-      address: "",
-    });
+      toast.success("Issue reported successfully!");
 
-    navigate("/");
+      // Reset form
+      setFormData({
+        title: "",
+        priority: "",
+        description: "",
+        image: null,
+        imagePreview: null,
+        position: null,
+        address: "",
+      });
 
-  } catch (err) {
-    toast.error(err.response?.data?.message || "Error submitting issue");
-  } finally {
-    setLoading(false);
-  }
-};
+      navigate("/");
+
+    } catch (err) {
+      console.error('Error submitting issue:', err);
+
+      // Handle specific error cases
+      if (err.response?.status === 401) {
+        toast.error('Session expired. Please login again.');
+        localStorage.removeItem('token');
+        navigate('/login');
+      } else if (err.response?.status === 400) {
+        toast.error(err.response?.data?.message || 'Invalid form data');
+      } else {
+        toast.error(err.response?.data?.message || 'Error submitting issue');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
 
@@ -364,9 +438,10 @@ const handleSubmit = async (e) => {
                 <button
                   type="button"
                   onClick={detectCurrentLocation}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  disabled={loadingLocation}
                 >
-                  📍 Detect Current Location
+                  {loadingLocation ? '⏳ Detecting...' : '📍 Detect Current Location'}
                 </button>
 
                 {/* Latitude & Longitude read-only fields */}
@@ -393,6 +468,47 @@ const handleSubmit = async (e) => {
                   </div>
                 </div>
               </div>
+
+              {/* Permission Denied Alert */}
+              {permissionDenied && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-red-800">
+                        Location Permission Blocked
+                      </h3>
+                      <div className="mt-2 text-sm text-red-700">
+                        <p className="mb-2">
+                          Your browser has blocked location access. To enable it:
+                        </p>
+                        <ol className="list-decimal ml-5 space-y-1">
+                          <li>Click the <strong>🔒 lock icon</strong> or <strong>🎵 tune icon</strong> next to the URL in your browser's address bar</li>
+                          <li>Find "Location" in the permissions list</li>
+                          <li>Change it from "Block" to "Allow"</li>
+                          <li>Refresh the page and click "Detect Current Location" again</li>
+                        </ol>
+                        <p className="mt-3 font-medium">
+                          💡 <strong>Alternative:</strong> You can also click on the map below to manually select a location
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Permission Status Info (for development) */}
+              {permissionStatus === 'prompt' && !permissionDenied && (
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded">
+                  <p className="text-sm text-blue-700">
+                    <strong>ℹ️ Tip:</strong> Click the "Detect Current Location" button to allow access to your location
+                  </p>
+                </div>
+              )}
 
               {/* Address Box */}
               <div>
