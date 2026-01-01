@@ -7,7 +7,7 @@ import User from '../models/User.js';
 export const createIssue = async (req, res) => {
   try {
     const { title, description, priority, location } = req.body;
-    const userId = req.user._id;
+    const userId = req.user.id;
     console.log("User ID reporting issue:", userId);
     // Validate required fields
     if (!title || !description || !location) {
@@ -71,21 +71,31 @@ export const createIssue = async (req, res) => {
     await issue.save();
 
     // Save complete issue information in user collection
-    await User.findByIdAndUpdate(userId, {
-      $push: {
-        issues: {
-          issueId: issue._id,
-          title: issue.title,
-          description: issue.description,
-          status: issue.status,
-          priority: issue.priority,
-          image: issue.image,
-          address: issue.address,
-          location: issue.location,
-          createdAt: issue.createdAt,
+    const userUpdate = await User.findByIdAndUpdate(
+      userId,
+      {
+        $push: {
+          issues: {
+            issueId: issue._id,
+            title: issue.title,
+            description: issue.description,
+            status: issue.status,
+            priority: issue.priority,
+            image: issue.image,
+            address: issue.address,
+            location: issue.location,
+            createdAt: issue.createdAt,
+          }
         }
-      }
-    });
+      },
+      { new: true }
+    );
+
+    if (!userUpdate) {
+      // If user update fails, we should ideally rollback the issue creation
+      // For now, log the error but still return success for the issue
+      console.error("Failed to update user's issues array for userId:", userId);
+    }
 
     return res.status(201).json({
       success: true,
@@ -100,10 +110,12 @@ export const createIssue = async (req, res) => {
     });
   }
 };
-// GET: All issues
+// GET: All issues with user information
 export const getAllIssue = async (req, res) => {
   try {
-    const issues = await Issue.find().sort({ createdAt: -1 });
+    const issues = await Issue.find()
+      .populate('createdBy', 'name email address') // Populate user info
+      .sort({ createdAt: -1 });
     res.status(200).json({ success: true, issues });
   } catch (error) {
     console.error("Error fetching issues:", error);
@@ -111,16 +123,43 @@ export const getAllIssue = async (req, res) => {
   }
 };
 
-// GET: Issue by ID
+// GET: Issue by ID with user information
 export const getIssueById = async (req, res) => {
   try {
-    const issue = await Issue.findById(req.params.id);
+    const issue = await Issue.findById(req.params.id)
+      .populate('createdBy', 'name email address'); // Populate user info
     if (!issue) {
       return res.status(404).json({ success: false, message: "Issue not found" });
     }
     res.status(200).json({ success: true, issue });
   } catch (error) {
     console.error("Error fetching issue:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET: Current user's issues
+export const getUserIssues = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Option 1: Get from User collection (embedded documents)
+    const user = await User.findById(userId).select('issues');
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Option 2: Also get from Issue collection for consistency
+    const issues = await Issue.find({ createdBy: userId })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      issues: issues, // Issues from Issue collection
+      userIssues: user.issues // Issues from User collection
+    });
+  } catch (error) {
+    console.error("Error fetching user issues:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
