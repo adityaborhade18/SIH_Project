@@ -7,7 +7,8 @@ import User from '../models/User.js';
 export const createIssue = async (req, res) => {
   try {
     const { title, description, priority, location } = req.body;
-
+    const userId = req.user._id;
+    console.log("User ID reporting issue:", userId);
     // Validate required fields
     if (!title || !description || !location) {
       return res.status(400).json({
@@ -64,9 +65,27 @@ export const createIssue = async (req, res) => {
       },
       address: locationData.address || "",
       image: imageUrl,
+      createdBy: userId,
     });
 
     await issue.save();
+
+    // Save complete issue information in user collection
+    await User.findByIdAndUpdate(userId, {
+      $push: {
+        issues: {
+          issueId: issue._id,
+          title: issue.title,
+          description: issue.description,
+          status: issue.status,
+          priority: issue.priority,
+          image: issue.image,
+          address: issue.address,
+          location: issue.location,
+          createdAt: issue.createdAt,
+        }
+      }
+    });
 
     return res.status(201).json({
       success: true,
@@ -111,7 +130,8 @@ export const getMe = async (req, res) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
 
-    const user = await User.findById(userId).select('-password'); // exclude password
+    const user = await User.findById(userId)
+      .select('-password'); // exclude password
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
     res.status(200).json({ success: true, user });

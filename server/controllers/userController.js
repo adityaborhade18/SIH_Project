@@ -42,6 +42,7 @@ export const register = async (req, res) => {
       email,
       password,
       role: role === 'admin' && req.user?.role !== 'admin' ? 'user' : role // Only allow admin to create other admins
+      
     });
 
     await user.save();
