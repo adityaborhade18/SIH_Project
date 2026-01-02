@@ -150,6 +150,67 @@ const IssueTracker = () => {
     );
   }
 
+  // No issues found
+   // No issues found
+// No issues found
+if (!loading && issues.length === 0) {
+  return (
+    <div className="flex flex-col min-h-screen">
+      <div className="flex-grow flex items-center justify-center px-4 py-16 sm:py-24">
+        <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl overflow-hidden mx-auto">
+          <div className="p-8 sm:p-12 text-center">
+            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-blue-50 flex items-center justify-center">
+              <svg 
+                className="w-14 h-14 text-blue-500" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth="1.5" 
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">No Issues Found</h2>
+            <p className="text-gray-600 mb-8 text-lg max-w-md mx-auto">
+              You haven't reported any issues yet. Let's get started by reporting your first issue!
+            </p>
+            <button
+              onClick={() => navigate('/report-issue')}
+              className="relative inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              <span className="mr-2">Report New Issue</span>
+              <svg 
+                className="w-5 h-5" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth="2" 
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+            </button>
+          </div>
+          <div className="bg-gray-50 px-8 py-4 text-center border-t border-gray-100">
+            <p className="text-sm text-gray-500">
+              Having trouble? <span className="text-blue-600 hover:underline cursor-pointer">View our help guide</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
   return (
     <Container maxWidth="lg" sx={{ py: 6 }}>
       {/* Header */}
