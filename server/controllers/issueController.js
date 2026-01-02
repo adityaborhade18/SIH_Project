@@ -8,7 +8,7 @@ export const createIssue = async (req, res) => {
   try {
     const { title, description, priority, location } = req.body;
     const userId = req.user.id;
-    console.log("User ID reporting issue:", userId);
+    
     // Validate required fields
     if (!title || !description || !location) {
       return res.status(400).json({
@@ -141,7 +141,8 @@ export const getIssueById = async (req, res) => {
 // GET: Current user's issues
 export const getUserIssues = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
+    
 
     // Option 1: Get from User collection (embedded documents)
     const user = await User.findById(userId).select('issues');
