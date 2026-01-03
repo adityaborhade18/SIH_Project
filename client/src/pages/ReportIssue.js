@@ -12,6 +12,8 @@ import L from "leaflet";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import CameraCapture from "../components/CameraCapture";
+
 
 
 // Leaflet marker fix
@@ -41,6 +43,8 @@ export default function ReportIssue() {
   const [loadingLocation, setLoadingLocation] = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState(null);
+  const [openCamera, setOpenCamera] = useState(false);
+
 
   // Check if user is authenticated on mount
   useEffect(() => {
@@ -294,21 +298,36 @@ export default function ReportIssue() {
 
 
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  // const handleImageChange = (e) => {
+  //   const file = e.target.files[0];
+  //   if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData((prev) => ({
-        ...prev,
-        image: file,
-        imagePreview: reader.result,
-      }));
-      setErrors((prev) => ({ ...prev, image: null }));
-    };
-    reader.readAsDataURL(file);
-  };
+  //   const reader = new FileReader();
+  //   reader.onloadend = () => {
+  //     setFormData((prev) => ({
+  //       ...prev,
+  //       image: file,
+  //       imagePreview: reader.result,
+  //     }));
+  //     setErrors((prev) => ({ ...prev, image: null }));
+  //   };
+  //   reader.readAsDataURL(file);
+  // };
+  
+   const handleCapture = (blob) => {
+  const file = new File([blob], "live-photo.jpg", { type: "image/jpeg" });
+
+  setFormData(prev => ({
+    ...prev,
+    image: file,
+    imagePreview: URL.createObjectURL(file)
+  }));
+
+  setErrors(prev => ({ ...prev, image: null }));
+};
+
+
+
 
   return (
     <div className="max-w-6xl mx-auto py-16 px-4">
@@ -383,7 +402,7 @@ export default function ReportIssue() {
               </div>
 
               {/* Image Upload */}
-              <div>
+              {/* <div>
                 <label className="font-semibold">Upload Image *</label>
 
                 {!formData.imagePreview ? (
@@ -426,7 +445,51 @@ export default function ReportIssue() {
                 {errors.image && (
                   <p className="text-red-500 text-sm">{errors.image}</p>
                 )}
-              </div>
+              </div> */}
+
+              {/* Camera Capture */}
+<div>
+  <label className="font-semibold">Capture Image *</label>
+
+  {!formData.imagePreview ? (
+    <div
+      className="border-2 border-dashed p-6 rounded-xl text-center cursor-pointer"
+      onClick={() => setOpenCamera(true)}
+    >
+      <p className="text-gray-500">📷 Open Camera</p>
+    </div>
+  ) : (
+    <div className="flex items-center gap-4">
+      <img
+        src={formData.imagePreview}
+        alt="Preview"
+        className="w-32 h-32 rounded-lg object-cover border"
+      />
+      <button
+        type="button"
+        className="text-red-600 font-semibold"
+        onClick={() =>
+          setFormData((prev) => ({
+            ...prev,
+            image: null,
+            imagePreview: null,
+          }))
+        }
+      >
+        Remove
+      </button>
+    </div>
+  )}
+
+  {errors.image && (
+    <p className="text-red-500 text-sm">{errors.image}</p>
+  )}
+</div>
+
+
+
+
+
 
             </div>
 
@@ -565,6 +628,15 @@ export default function ReportIssue() {
           </button>
         </form>
       </div>
+
+
+      {openCamera && (
+  <CameraCapture
+    onCapture={handleCapture}
+    onClose={() => setOpenCamera(false)}
+  />
+)}
+
     </div>
   );
 }
