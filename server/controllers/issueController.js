@@ -1,5 +1,6 @@
 import Issue from "../models/issue.js";
 import User from '../models/User.js';
+import mongoose from 'mongoose'
 
 
 
@@ -137,6 +138,32 @@ export const getIssueById = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+
+
+// export const getIssueById = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     // Validate ObjectId
+//     if (!mongoose.Types.ObjectId.isValid(id)) {
+//       return res.status(400).json({ success: false, message: "Invalid issue ID" });
+//     }
+
+//     const issue = await Issue.findById(id)
+//       .populate("createdBy", "name email address");
+
+//     if (!issue) {
+//       return res.status(404).json({ success: false, message: "Issue not found" });
+//     }
+
+//     res.status(200).json({ success: true, issue });
+//   } catch (error) {
+//     console.error("Error fetching issue:", error);
+//     res.status(500).json({ success: false, message: error.message });
+//   }
+// };
+
 
 // GET: Current user's issues
 export const getUserIssues = async (req, res) => {
