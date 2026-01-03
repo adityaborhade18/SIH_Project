@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
-const Loginn = () => {   
+const Loginn = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [state, setState] = useState("login");
@@ -17,17 +17,17 @@ const Loginn = () => {
   // Check auth status on mount and redirect if already logged in
   useEffect(() => {
     let isMounted = true;
-    
+
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
       if (!token) return;
-      
+
       try {
-        const { data } = await axios.get('http://localhost:5000/api/user/me', {
+        const { data } = await axios.get('/api/user/me', {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true
         });
-        
+
         if (isMounted && data?.success) {
           navigate(from, { replace: true });
         }
@@ -38,9 +38,9 @@ const Loginn = () => {
         }
       }
     };
-    
+
     checkAuth();
-    
+
     return () => {
       isMounted = false;
     };
@@ -49,12 +49,12 @@ const Loginn = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setIsLoading(true);
-    
+
     try {
       const { data } = await axios.post(
-        `http://localhost:5000/api/user/${state}`,
+        `/api/user/${state}`,
         { name, email, password },
-        { 
+        {
           withCredentials: true,
           headers: { 'Content-Type': 'application/json' }
         }
@@ -63,7 +63,7 @@ const Loginn = () => {
       if (data.success) {
         localStorage.setItem('token', data.token);
         toast.success(data.message || 'Success!');
-        
+
         // Navigate to the intended page
         navigate(from, { replace: true });
       } else {
@@ -148,7 +148,7 @@ const Loginn = () => {
           </p>
         )}
 
-        <button 
+        <button
           type="submit"
           disabled={isLoading}
           className={`bg-blue-500 hover:bg-blue-600 transition-all text-white w-full py-2 rounded-md ${isLoading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}

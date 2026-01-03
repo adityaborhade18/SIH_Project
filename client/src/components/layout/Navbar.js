@@ -10,7 +10,7 @@ const Navbar = () => {
         { name: 'Track Issue', path: 'track-issue' },
         { name: 'About', path: '/about' },
         { name: 'Contact', path: '/contact' },
-       
+
     ];
 
     const navigate = useNavigate();
@@ -26,7 +26,7 @@ const Navbar = () => {
             try {
                 const token = localStorage.getItem('token');
                 if (token) {
-                    const { data } = await axios.get('http://localhost:5000/api/user/me', {
+                    const { data } = await axios.get('/api/user/me', {
                         headers: { Authorization: `Bearer ${token}` },
                         withCredentials: true
                     });
@@ -50,7 +50,7 @@ const Navbar = () => {
         };
 
         checkAuth();
-        
+
         // Listen for storage events to handle login/logout from other tabs
         const handleStorageChange = (e) => {
             if (e.key === 'token') {
@@ -72,7 +72,7 @@ const Navbar = () => {
         e.preventDefault();
         // Only navigate if we're not already on the login page
         if (window.location.pathname !== '/loginn') {
-            navigate('/loginn', { 
+            navigate('/loginn', {
                 state: { from: window.location.pathname },
                 replace: true
             });
@@ -81,7 +81,7 @@ const Navbar = () => {
 
     const handleLogout = async () => {
         try {
-            await axios.post('http://localhost:5000/api/user/logout', {}, {
+            await axios.post('/api/user/logout', {}, {
                 withCredentials: true,
                 headers: {
                     'Content-Type': 'application/json',
@@ -93,14 +93,14 @@ const Navbar = () => {
         } finally {
             // Clear all auth related data
             localStorage.removeItem('token');
-            
+
             // Update state
             setIsLoggedIn(false);
             setUser(null);
-            
+
             // Show success message
             toast.success('Logged out successfully');
-            
+
             // Redirect to home and force a full page reload to reset all states
             window.location.href = '/';
         }

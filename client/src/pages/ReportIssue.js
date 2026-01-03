@@ -252,7 +252,7 @@ export default function ReportIssue() {
       }
 
       const response = await axios.post(
-        "http://localhost:5000/api/user/createissue",
+        "/api/user/createissue",
         form,
         {
           headers: {
@@ -313,18 +313,18 @@ export default function ReportIssue() {
   //   };
   //   reader.readAsDataURL(file);
   // };
-  
-   const handleCapture = (blob) => {
-  const file = new File([blob], "live-photo.jpg", { type: "image/jpeg" });
 
-  setFormData(prev => ({
-    ...prev,
-    image: file,
-    imagePreview: URL.createObjectURL(file)
-  }));
+  const handleCapture = (blob) => {
+    const file = new File([blob], "live-photo.jpg", { type: "image/jpeg" });
 
-  setErrors(prev => ({ ...prev, image: null }));
-};
+    setFormData(prev => ({
+      ...prev,
+      image: file,
+      imagePreview: URL.createObjectURL(file)
+    }));
+
+    setErrors(prev => ({ ...prev, image: null }));
+  };
 
 
 
@@ -448,43 +448,43 @@ export default function ReportIssue() {
               </div> */}
 
               {/* Camera Capture */}
-<div>
-  <label className="font-semibold">Capture Image *</label>
+              <div>
+                <label className="font-semibold">Capture Image *</label>
 
-  {!formData.imagePreview ? (
-    <div
-      className="border-2 border-dashed p-6 rounded-xl text-center cursor-pointer"
-      onClick={() => setOpenCamera(true)}
-    >
-      <p className="text-gray-500">📷 Open Camera</p>
-    </div>
-  ) : (
-    <div className="flex items-center gap-4">
-      <img
-        src={formData.imagePreview}
-        alt="Preview"
-        className="w-32 h-32 rounded-lg object-cover border"
-      />
-      <button
-        type="button"
-        className="text-red-600 font-semibold"
-        onClick={() =>
-          setFormData((prev) => ({
-            ...prev,
-            image: null,
-            imagePreview: null,
-          }))
-        }
-      >
-        Remove
-      </button>
-    </div>
-  )}
+                {!formData.imagePreview ? (
+                  <div
+                    className="border-2 border-dashed p-6 rounded-xl text-center cursor-pointer"
+                    onClick={() => setOpenCamera(true)}
+                  >
+                    <p className="text-gray-500">📷 Open Camera</p>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={formData.imagePreview}
+                      alt="Preview"
+                      className="w-32 h-32 rounded-lg object-cover border"
+                    />
+                    <button
+                      type="button"
+                      className="text-red-600 font-semibold"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          image: null,
+                          imagePreview: null,
+                        }))
+                      }
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
 
-  {errors.image && (
-    <p className="text-red-500 text-sm">{errors.image}</p>
-  )}
-</div>
+                {errors.image && (
+                  <p className="text-red-500 text-sm">{errors.image}</p>
+                )}
+              </div>
 
 
 
@@ -631,11 +631,11 @@ export default function ReportIssue() {
 
 
       {openCamera && (
-  <CameraCapture
-    onCapture={handleCapture}
-    onClose={() => setOpenCamera(false)}
-  />
-)}
+        <CameraCapture
+          onCapture={handleCapture}
+          onClose={() => setOpenCamera(false)}
+        />
+      )}
 
     </div>
   );

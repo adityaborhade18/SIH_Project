@@ -70,7 +70,7 @@ const IssueTracker = () => {
     const fetchIssues = async () => {
       try {
         setLoading(true);
-        const res = await axios.get('http://localhost:5000/api/user/myissues');
+        const res = await axios.get('/api/user/myissues');
         console.log("API Response:", res.data);
         setIssues(res.data.userIssues || []);
       } catch (err) {

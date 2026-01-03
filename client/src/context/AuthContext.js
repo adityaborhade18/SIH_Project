@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/auth/me", {
+        const res = await axios.get("/api/auth/me", {
           withCredentials: true, // send cookies
         });
         setUser(res.data.user);

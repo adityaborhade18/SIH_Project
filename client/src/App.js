@@ -35,7 +35,7 @@ const ProtectedRoute = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/user/me", {
+        const res = await axios.get("/api/user/me", {
           withCredentials: true,
         });
 
@@ -79,7 +79,7 @@ const PublicRoute = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        await axios.get('http://localhost:5000/api/user/me', {
+        await axios.get('/api/user/me', {
           withCredentials: true,
         });
         setAuthenticated(true);
@@ -95,11 +95,11 @@ const PublicRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '50vh' 
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '50vh'
       }}>
         <p>Loading...</p>
       </div>
@@ -128,7 +128,7 @@ const theme = createTheme({
 
 function App() {
 
-const isAdminPath = useLocation().pathname.startsWith("/admin");
+  const isAdminPath = useLocation().pathname.startsWith("/admin");
 
   return (
     <ThemeProvider theme={theme}>
@@ -147,7 +147,7 @@ const isAdminPath = useLocation().pathname.startsWith("/admin");
               <Route path="/track-issue" element={<IssueTracker />} />
               <Route path="/issue/:id" element={<IssueDetails />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
-              
+
               {/* Public routes that shouldn't be accessible when logged in */}
               {/* <Route 
                 path="/loginn" 
@@ -157,8 +157,8 @@ const isAdminPath = useLocation().pathname.startsWith("/admin");
                   </PublicRoute>
                 } 
               /> */}
-               
-               <Route path="/loginn" element={<Loginn />} />
+
+              <Route path="/loginn" element={<Loginn />} />
 
 
               {/* Protected Routes */}
@@ -170,7 +170,7 @@ const isAdminPath = useLocation().pathname.startsWith("/admin");
                   </ProtectedRoute>
                 }
               />
-              
+
               <Route
                 path="/user"
                 element={
@@ -181,13 +181,13 @@ const isAdminPath = useLocation().pathname.startsWith("/admin");
               />
 
 
-          
-          <Route path="/admin/:section" element={<AdminLogin />} />
- 
+
+              <Route path="/admin/:section" element={<AdminLogin />} />
+
 
 
               {/* 404 fallback */}
-              {/* <Route path="*" element={<Navigate to="/" replace />} /> */ }
+              {/* <Route path="*" element={<Navigate to="/" replace />} /> */}
             </Routes>
           </main>
           <Footer />

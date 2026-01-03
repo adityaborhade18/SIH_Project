@@ -42,7 +42,7 @@ const IssueDetails = () => {
 
   const fetchIssue = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/user/issue/${id}`);
+      const res = await axios.get(`/api/user/issue/${id}`);
       console.log("res: of the fetchissue", res.data.issue);
       setIssue(res.data.issue);
     } catch (err) {
