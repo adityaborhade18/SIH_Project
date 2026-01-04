@@ -586,7 +586,7 @@ export default function ReportIssue() {
               </div>
 
               {/* Map */}
-              <div className="h-[400px] rounded-xl overflow-hidden border">
+              <div className="h-[400px] rounded-xl overflow-hidden border relative z-10">
                 {loadingLocation ? (
                   <p className="text-gray-500 p-3">Fetching location...</p>
                 ) : (

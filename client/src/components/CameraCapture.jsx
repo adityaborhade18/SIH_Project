@@ -39,7 +39,7 @@ export default function CameraCapture({ onCapture, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999]">
       <div className="bg-white p-4 rounded-lg w-[350px]">
         <video ref={videoRef} autoPlay playsInline className="w-full rounded" />
         <canvas ref={canvasRef} className="hidden" />
