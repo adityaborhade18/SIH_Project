@@ -139,7 +139,7 @@ function App() {
           className="app"
           style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}
         >
-          <Navbar />
+          {!isAdminPath && <Navbar />}
           <main style={{ flex: 1 }}>
             <Routes>
               {/* Public Routes */}
@@ -190,7 +190,7 @@ function App() {
               {/* <Route path="*" element={<Navigate to="/" replace />} /> */}
             </Routes>
           </main>
-          <Footer />
+          {!isAdminPath && <Footer />}
         </div>
       </IssueProvider>
     </ThemeProvider>
