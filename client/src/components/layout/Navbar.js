@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 
@@ -68,6 +68,26 @@ const Navbar = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    const handleNavClick = (e, link) => {
+        // Check if the route requires authentication
+        const protectedRoutes = ['report-issue', '/report-issue'];
+
+        if (protectedRoutes.includes(link.path)) {
+            // If user is not logged in, prevent navigation and show toast
+            if (!isLoggedIn) {
+                e.preventDefault();
+                toast.error('Please login to report an issue', {
+                    duration: 3000,
+                    position: 'top-center',
+                });
+                // Redirect to login page
+                navigate('/loginn', {
+                    state: { from: link.path }
+                });
+            }
+        }
+    };
+
     const handleLoginClick = (e) => {
         e.preventDefault();
         // Only navigate if we're not already on the login page
@@ -123,11 +143,14 @@ const Navbar = () => {
                 {/* Desktop Nav */}
                 <div className="hidden md:flex items-center gap-4 lg:gap-8">
                     {navLinks.map((link, i) => (
-                        <a key={i} href={link.path}
+                        <Link
+                            key={i}
+                            to={link.path}
+                            onClick={(e) => handleNavClick(e, link)}
                             className="group flex flex-col gap-0.5 text-gray-700">
                             {link.name}
                             <div className="bg-gray-700 h-0.5 w-0 group-hover:w-full transition-all duration-300" />
-                        </a>
+                        </Link>
                     ))}
                 </div>
 
