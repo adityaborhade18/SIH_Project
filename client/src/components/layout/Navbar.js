@@ -70,16 +70,24 @@ const Navbar = () => {
 
     const handleNavClick = (e, link) => {
         // Check if the route requires authentication
-        const protectedRoutes = ['report-issue', '/report-issue'];
+        const protectedRoutes = ['report-issue', '/report-issue', 'track-issue', '/track-issue'];
 
         if (protectedRoutes.includes(link.path)) {
             // If user is not logged in, prevent navigation and show toast
             if (!isLoggedIn) {
                 e.preventDefault();
-                toast.error('Please login to report an issue', {
+
+                // Show appropriate toast message based on the route
+                const isReportIssue = link.path.includes('report');
+                const message = isReportIssue
+                    ? 'Please login to report an issue'
+                    : 'Please login to track your issues';
+
+                toast.error(message, {
                     duration: 3000,
                     position: 'top-center',
                 });
+
                 // Redirect to login page
                 navigate('/loginn', {
                     state: { from: link.path }

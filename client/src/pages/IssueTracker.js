@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
 import {
   Container,
@@ -59,6 +60,7 @@ const IssueTracker = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const itemsPerPage = 6;
   const theme = useTheme();
@@ -70,11 +72,30 @@ const IssueTracker = () => {
     const fetchIssues = async () => {
       try {
         setLoading(true);
-        const res = await axios.get('/api/user/myissues');
+
+        // Check if user is logged in
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setIsLoggedIn(false);
+          setIssues([]);
+          setLoading(false);
+          return;
+        }
+
+        // User is logged in, fetch their issues
+        setIsLoggedIn(true);
+        const res = await axios.get('/api/user/myissues', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         console.log("API Response:", res.data);
         setIssues(res.data.userIssues || []);
       } catch (err) {
         console.error('Error fetching issues:', err);
+        // If authentication fails, user is not logged in
+        if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+          setIsLoggedIn(false);
+          localStorage.removeItem('token');
+        }
         setIssues([]);
       } finally {
         setLoading(false);
@@ -82,6 +103,21 @@ const IssueTracker = () => {
     };
     fetchIssues();
   }, []);
+
+  // Handler for Report New Issue button
+  const handleReportIssueClick = () => {
+    if (!isLoggedIn) {
+      toast.error('Please login to report an issue', {
+        duration: 3000,
+        position: 'top-center',
+      });
+      navigate('/loginn', {
+        state: { from: '/report-issue' }
+      });
+    } else {
+      navigate('/report-issue');
+    }
+  };
 
   // Helpers
   const getPriorityColor = (priority) => {
@@ -151,9 +187,67 @@ const IssueTracker = () => {
   }
 
   // No issues found
-  // No issues found
-  // No issues found
   if (!loading && issues.length === 0) {
+    // Not logged in - show login prompt
+    if (!isLoggedIn) {
+      return (
+        <div className="flex flex-col min-h-screen">
+          <div className="flex-grow flex items-center justify-center px-4 py-16 sm:py-24">
+            <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl overflow-hidden mx-auto">
+              <div className="p-8 sm:p-12 text-center">
+                <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-orange-50 flex items-center justify-center">
+                  <svg
+                    className="w-14 h-14 text-orange-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="1.5"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                </div>
+                <h2 className="text-3xl font-bold text-gray-800 mb-4">Authentication Required</h2>
+                <p className="text-gray-600 mb-8 text-lg max-w-md mx-auto">
+                  Please login to view and track your reported issues. You need an account to access this feature.
+                </p>
+                <button
+                  onClick={() => navigate('/loginn', { state: { from: '/track-issue' } })}
+                  className="relative inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  <span className="mr-2">Login to Continue</span>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M13 7l5 5m0 0l-5 5m5-5H6"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div className="bg-gray-50 px-8 py-4 text-center border-t border-gray-100">
+                <p className="text-sm text-gray-500">
+                  Don't have an account? <span className="text-blue-600 hover:underline cursor-pointer" onClick={() => navigate('/loginn')}>Sign up here</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Logged in but no issues
     return (
       <div className="flex flex-col min-h-screen">
         <div className="flex-grow flex items-center justify-center px-4 py-16 sm:py-24">
@@ -180,7 +274,7 @@ const IssueTracker = () => {
                 You haven't reported any issues yet. Let's get started by reporting your first issue!
               </p>
               <button
-                onClick={() => navigate('/report-issue')}
+                onClick={handleReportIssueClick}
                 className="relative inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 <span className="mr-2">Report New Issue</span>
@@ -251,7 +345,7 @@ const IssueTracker = () => {
         <Button
           variant="contained"
           size="large"
-          onClick={() => navigate("/report-issue")}
+          onClick={handleReportIssueClick}
           sx={{
             px: 4,
             py: 1.4,
