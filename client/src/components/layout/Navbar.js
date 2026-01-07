@@ -6,8 +6,8 @@ import axios from 'axios';
 const Navbar = () => {
     const navLinks = [
         { name: 'Home', path: '/' },
-        { name: 'Report Issue', path: 'report-issue' },
-        { name: 'Track Issue', path: 'track-issue' },
+        { name: 'Report Issue', path: '/report-issue' },
+        { name: 'Track Issue', path: '/track-issue' },
         { name: 'About', path: '/about' },
         { name: 'Contact', path: '/contact' },
 
@@ -129,8 +129,8 @@ const Navbar = () => {
             // Show success message
             toast.success('Logged out successfully');
 
-            // Redirect to home and force a full page reload to reset all states
-            window.location.href = '/';
+            // Navigate to home without page reload
+            navigate('/', { replace: true });
         }
     };
 
