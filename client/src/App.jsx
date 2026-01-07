@@ -16,6 +16,8 @@ import ForgotPassword from './pages/ForgotPassword';
 import AdminDashboard from './pages/admin/Dashboard';
 import UserPage from './pages/UserPage';
 import Loginn from './pages/loginn';
+import About from './pages/About';
+import Contact from './pages/Contact';
 
 // Components
 import Navbar from './components/layout/Navbar';
@@ -147,6 +149,8 @@ function App() {
               <Route path="/track-issue" element={<IssueTracker />} />
               <Route path="/issue/:id" element={<IssueDetails />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
 
               {/* Public routes that shouldn't be accessible when logged in */}
               {/* <Route 
