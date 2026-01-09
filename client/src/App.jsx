@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
 import { IssueProvider } from './context/IssueContext';
 import { Toaster } from 'react-hot-toast';
 import axios from 'axios';
-import { Outlet } from "react-router-dom";
+import { Loader2 } from 'lucide-react';
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -54,12 +52,15 @@ const ProtectedRoute = ({ children }) => {
     };
 
     checkAuth();
-  }, []); // ✅ only run once
+  }, []);
 
   if (loading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
-        <p>Loading...</p>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Verifying authentication...</p>
+        </div>
       </div>
     );
   }
@@ -71,8 +72,6 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-
-// ✅ Public Route Component (redirects to home if already authenticated)
 const PublicRoute = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
@@ -97,18 +96,15 @@ const PublicRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '50vh'
-      }}>
-        <p>Loading...</p>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
     );
   }
 
-  // If user is already authenticated and trying to access login page, redirect to home
   if (authenticated && location.pathname === '/loginn') {
     return <Navigate to="/" replace />;
   }
@@ -116,88 +112,66 @@ const PublicRoute = ({ children }) => {
   return children;
 };
 
-const theme = createTheme({
-  palette: {
-    primary: { main: '#1976d2' },
-    secondary: { main: '#dc004e' },
-    background: { default: '#f5f5f5' },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h1: { fontWeight: 500 },
-  },
-});
-
 function App() {
-
   const isAdminPath = useLocation().pathname.startsWith("/admin");
 
   return (
-    <ThemeProvider theme={theme}>
-      <IssueProvider>
-        <CssBaseline />
-        <Toaster />
-        <div
-          className="app"
-          style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}
-        >
-          {!isAdminPath && <Navbar />}
-          <main style={{ flex: 1 }}>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/track-issue" element={<IssueTracker />} />
-              <Route path="/issue/:id" element={<IssueDetails />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
+    <IssueProvider>
+      <Toaster position="top-center" toastOptions={{
+        duration: 3000,
+        style: {
+          background: '#363636',
+          color: '#fff',
+        },
+        success: {
+          style: {
+            background: '#22c55e',
+          },
+        },
+        error: {
+          style: {
+            background: '#ef4444',
+          },
+        },
+      }} />
+      <div className="app flex flex-col min-h-screen">
+        {!isAdminPath && <Navbar />}
+        <main className="flex-1">
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/track-issue" element={<IssueTracker />} />
+            <Route path="/issue/:id" element={<IssueDetails />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/loginn" element={<Loginn />} />
 
-              {/* Public routes that shouldn't be accessible when logged in */}
-              {/* <Route 
-                path="/loginn" 
-                element={
-                  <PublicRoute>
-                    <Loginn />
-                  </PublicRoute>
-                } 
-              /> */}
+            {/* Protected Routes */}
+            <Route
+              path="/report-issue"
+              element={
+                <ProtectedRoute>
+                  <ReportIssue />
+                </ProtectedRoute>
+              }
+            />
 
-              <Route path="/loginn" element={<Loginn />} />
+            <Route
+              path="/user"
+              element={
+                <ProtectedRoute>
+                  <UserPage />
+                </ProtectedRoute>
+              }
+            />
 
-
-              {/* Protected Routes */}
-              <Route
-                path="/report-issue"
-                element={
-                  <ProtectedRoute>
-                    <ReportIssue />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/user"
-                element={
-                  <ProtectedRoute>
-                    <UserPage />
-                  </ProtectedRoute>
-                }
-              />
-
-
-
-              <Route path="/admin/:section" element={<AdminLogin />} />
-
-
-
-              {/* 404 fallback */}
-              {/* <Route path="*" element={<Navigate to="/" replace />} /> */}
-            </Routes>
-          </main>
-          {!isAdminPath && <Footer />}
-        </div>
-      </IssueProvider>
-    </ThemeProvider>
+            <Route path="/admin/:section" element={<AdminLogin />} />
+          </Routes>
+        </main>
+        {!isAdminPath && <Footer />}
+      </div>
+    </IssueProvider>
   );
 }
 
