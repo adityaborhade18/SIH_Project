@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import DirectionsCar from '@mui/icons-material/DirectionsCar';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 
 import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Select, 
-  MenuItem, 
-  FormControl, 
-  InputLabel, 
-  Avatar, 
-  Chip, 
-  Card, 
+import {
+  Box,
+  Typography,
+  Paper,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Avatar,
+  Chip,
+  Card,
   CardContent,
   Divider,
   IconButton,
@@ -36,12 +39,12 @@ import {
   ListItemIcon,
   ListItemText
 } from '@mui/material';
-import { 
-  CheckCircleOutline, 
-  PendingActions, 
-  Build, 
-  Warning, 
-  Refresh, 
+import {
+  CheckCircleOutline,
+  PendingActions,
+  Build,
+  Warning,
+  Refresh,
   FilterList,
   MoreVert,
   LocationOn,
@@ -77,7 +80,8 @@ import {
   Image,
   VideoLibrary,
   AttachFile,
-  CleaningServices
+  CleaningServices,
+  Logout
 } from '@mui/icons-material';
 import { useIssues } from '../../context/IssueContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
@@ -287,6 +291,7 @@ const categoryIcons = {
 };
 
 const SanitationDashboard = () => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const { updateIssueStatus } = useIssues();
 
@@ -370,17 +375,17 @@ const SanitationDashboard = () => {
       if (filters.searchQuery && !`${issue.title} ${issue.description} ${issue.location} ${issue.category}`.toLowerCase().includes(filters.searchQuery.toLowerCase())) {
         return false;
       }
-      
+
       // Apply status filter
       if (filters.status.length > 0 && !filters.status.includes(issue.status)) {
         return false;
       }
-      
+
       // Apply priority filter
       if (filters.priority.length > 0 && !filters.priority.includes(issue.priority)) {
         return false;
       }
-      
+
       // Apply date range filter
       if (filters.dateRange[0] && new Date(issue.date) < filters.dateRange[0]) {
         return false;
@@ -388,7 +393,7 @@ const SanitationDashboard = () => {
       if (filters.dateRange[1] && new Date(issue.date) > filters.dateRange[1]) {
         return false;
       }
-      
+
       return true;
     }).sort((a, b) => {
       // Apply sorting
@@ -414,11 +419,11 @@ const SanitationDashboard = () => {
   // Handle bulk actions
   const handleBulkAction = () => {
     if (!bulkAction || selectedIssues.length === 0) return;
-    
+
     selectedIssues.forEach(id => {
       updateIssueStatus(id, bulkAction);
     });
-    
+
     setShowBulkDialog(false);
     setSelectedIssues([]);
     showSnackbar(`Updated status for ${selectedIssues.length} issues`, 'success');
@@ -465,22 +470,22 @@ const SanitationDashboard = () => {
 
   // Columns configuration
   const columns = [
-    { 
-      field: 'id', 
-      headerName: 'ID', 
+    {
+      field: 'id',
+      headerName: 'ID',
       width: 80,
-      renderCell: (params) => `#${params.value}` 
+      renderCell: (params) => `#${params.value}`
     },
-    { 
-      field: 'date', 
-      headerName: 'Date', 
+    {
+      field: 'date',
+      headerName: 'Date',
       width: 120,
       renderCell: (params) => new Date(params.value).toLocaleDateString()
     },
-    { 
-      field: 'title', 
-      headerName: 'Title', 
-      flex: 1, 
+    {
+      field: 'title',
+      headerName: 'Title',
+      flex: 1,
       minWidth: 200,
       renderCell: (params) => (
         <Box>
@@ -494,9 +499,9 @@ const SanitationDashboard = () => {
         </Box>
       )
     },
-    { 
-      field: 'priority', 
-      headerName: 'Priority', 
+    {
+      field: 'priority',
+      headerName: 'Priority',
       width: 120,
       renderCell: (params) => (
         <Chip
@@ -514,9 +519,9 @@ const SanitationDashboard = () => {
         />
       )
     },
-    { 
-      field: 'location', 
-      headerName: 'Location', 
+    {
+      field: 'location',
+      headerName: 'Location',
       width: 180,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -589,32 +594,55 @@ const SanitationDashboard = () => {
   ];
 
 
+  const handleLogout = async () => {
+    try {
+      const { data } = await axios.post('/api/admin/logout');
+      if (data.success) {
+        toast.success(data.message);
+        navigate('/admin/sanitation'); // Assuming this redirects to login if unauth, or we can use custom path
+        window.location.reload();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.error("Logout failed", error);
+      toast.error("Logout failed");
+    }
+  };
 
 
   // Render the component
   return (
-    <Box sx={{ p: 3, py: 8}}>
+    <Box sx={{ p: 3, py: 8 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-         
+
         <Box>
-          
+
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Sanitation Department 
+            Sanitation Department
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Welcome back! Here's what's happening with sanitation services.
           </Typography>
         </Box>
         <Box display="flex" gap={1}>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<Logout />}
+            onClick={handleLogout}
+          >
+            Logout
+          </Button>
+          <Button
+            variant="outlined"
             startIcon={<Refresh />}
             onClick={() => window.location.reload()}
           >
             Refresh
           </Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             color="primary"
             startIcon={<FilterList />}
             onClick={() => setAnchorEl(document.getElementById('filter-button'))}
@@ -653,7 +681,7 @@ const SanitationDashboard = () => {
                   ))}
                 </Select>
               </FormControl>
-              
+
               <FormControl fullWidth size="small" sx={{ mb: 2 }}>
                 <InputLabel>Priority</InputLabel>
                 <Select
@@ -670,7 +698,7 @@ const SanitationDashboard = () => {
                   ))}
                 </Select>
               </FormControl>
-              
+
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker
                   label="From Date"
@@ -685,10 +713,10 @@ const SanitationDashboard = () => {
                   renderInput={(params) => <TextField {...params} size="small" fullWidth />}
                 />
               </LocalizationProvider>
-              
+
               <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                <Button 
-                  size="small" 
+                <Button
+                  size="small"
                   onClick={() => setFilters({
                     status: [],
                     priority: [],
@@ -698,9 +726,9 @@ const SanitationDashboard = () => {
                 >
                   Reset
                 </Button>
-                <Button 
-                  variant="contained" 
-                  size="small" 
+                <Button
+                  variant="contained"
+                  size="small"
                   onClick={() => setAnchorEl(null)}
                   sx={{ ml: 1 }}
                 >
@@ -725,7 +753,7 @@ const SanitationDashboard = () => {
             sx: { width: 300 }
           }}
         />
-        
+
         <Box>
           {selectedIssues.length > 0 && (
             <>
@@ -759,16 +787,16 @@ const SanitationDashboard = () => {
 
       {/* Department Header */}
       <Box sx={{ mb: 4, p: 3, bgcolor: '#79554810', borderRadius: 2 }}>
-  
+
         {/* Department stats */}
-        <Box sx={{ 
-          display: 'grid', 
-          gap: 2, 
-          gridTemplateColumns: { 
-            xs: '1fr', 
-            sm: 'repeat(2, 1fr)', 
-            md: 'repeat(4, 1fr)' 
-          } 
+        <Box sx={{
+          display: 'grid',
+          gap: 2,
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(4, 1fr)'
+          }
         }}>
           <Card variant="outlined">
             <CardContent>
@@ -815,34 +843,34 @@ const SanitationDashboard = () => {
 
       {/* Tabs for different views within the department */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs 
-          value={activeTab} 
+        <Tabs
+          value={activeTab}
           onChange={(e, newValue) => setActiveTab(newValue)}
           aria-label="sanitation department tabs"
         >
-          <Tab 
-            icon={<BarChartIcon fontSize="small" />} 
+          <Tab
+            icon={<BarChartIcon fontSize="small" />}
             iconPosition="start"
-            label="Overview" 
-            value="overview" 
+            label="Overview"
+            value="overview"
           />
-          <Tab 
+          <Tab
             icon={<MapIcon fontSize="small" />}
             iconPosition="start"
-            label="Map View" 
-            value="map" 
+            label="Map View"
+            value="map"
           />
-          <Tab 
+          <Tab
             icon={<Assessment fontSize="small" />}
             iconPosition="start"
-            label="Analytics" 
-            value="analytics" 
+            label="Analytics"
+            value="analytics"
           />
-          <Tab 
+          <Tab
             icon={<People fontSize="small" />}
             iconPosition="start"
-            label="Team" 
-            value="team" 
+            label="Team"
+            value="team"
           />
         </Tabs>
       </Box>
@@ -850,8 +878,8 @@ const SanitationDashboard = () => {
       {/* Main Content */}
       {activeTab === 'overview' && (
         <>
-        
-         
+
+
 
           {/* Recent Reports Table */}
           <Paper elevation={0} variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2 }}>
@@ -863,8 +891,8 @@ const SanitationDashboard = () => {
                 <Typography variant="body2" color="text.secondary" display="inline" mr={2}>
                   Total: {filteredIssues.length} issues
                 </Typography>
-                <Button 
-                  size="small" 
+                <Button
+                  size="small"
                   startIcon={<Notifications />}
                   onClick={() => {
                     setShowMessageDialog(true);
@@ -875,7 +903,7 @@ const SanitationDashboard = () => {
                 </Button>
               </Box>
             </Box>
-            
+
             <div style={{ height: 500, width: '100%' }}>
               <DataGrid
                 rows={filteredIssues}
@@ -913,16 +941,16 @@ const SanitationDashboard = () => {
             </div>
           </Paper>
 
-           
-            {/* Charts Row */}
-          <Box sx={{ 
-            display: 'grid', 
-            gap: 3, 
-            gridTemplateColumns: { 
-              xs: '1fr', 
-              lg: '1fr 1fr' 
-            }, 
-            mb: 4 
+
+          {/* Charts Row */}
+          <Box sx={{
+            display: 'grid',
+            gap: 3,
+            gridTemplateColumns: {
+              xs: '1fr',
+              lg: '1fr 1fr'
+            },
+            mb: 4
           }}>
             <Paper sx={{ p: 2, height: 350, display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h6" gutterBottom>Sanitation Issues by Status</Typography>
@@ -943,23 +971,23 @@ const SanitationDashboard = () => {
                         const radius = 25 + outerRadius * 0.5;
                         const x = cx + radius * Math.cos(-midAngle * RADIAN);
                         const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                        
+
                         const lineEndX = cx + (outerRadius + 5) * Math.cos(-midAngle * RADIAN);
                         const lineEndY = cy + (outerRadius + 5) * Math.sin(-midAngle * RADIAN);
-                        
+
                         const lineStartX = cx + (outerRadius - 5) * Math.cos(-midAngle * RADIAN);
                         const lineStartY = cy + (outerRadius - 5) * Math.sin(-midAngle * RADIAN);
-                        
+
                         const isLeftSide = x < cx;
                         const textAnchor = isLeftSide ? 'end' : 'start';
                         const xOffset = isLeftSide ? -10 : 10;
-                        
+
                         let yOffset = 0;
                         if (name === 'In Process') yOffset = 8;
                         if (name === 'Solved') yOffset = -8;
                         if (name === 'Pending') yOffset = -5;
                         if (name === 'Rejected') yOffset = 5;
-                        
+
                         return (
                           <g>
                             <line
@@ -994,7 +1022,7 @@ const SanitationDashboard = () => {
                       ))}
                     </Pie>
                     <Legend />
-                    <RechartsTooltip 
+                    <RechartsTooltip
                       formatter={(value, name) => [value, name]}
                       labelFormatter={(name) => `Status: ${name}`}
                     />
@@ -1003,7 +1031,7 @@ const SanitationDashboard = () => {
               </Box>
             </Paper>
 
-           
+
           </Box>
 
 
@@ -1012,34 +1040,34 @@ const SanitationDashboard = () => {
 
       {activeTab === 'map' && (
         <Paper sx={{ p: 3, height: '70vh', minHeight: 500 }}>
-                  <Typography variant="h6" gutterBottom>Interactive Map View (Pune)</Typography>
-                  <Box sx={{ width: '100%', height: '60vh', position: 'relative', borderRadius: 2, overflow: 'hidden', boxShadow: 1 }}>
-                    <MapContainer center={[18.5204, 73.8567]} zoom={12} style={{ width: '100%', height: '100%' }} scrollWheelZoom={true}>
-                      <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      />
-                      {mapIssues.map(issue => (
-                        <Marker key={issue.id} position={issue.position} icon={categoryIcons[issue.category]}>
-                          <Popup>
-                            <Typography variant="subtitle2">{issue.title}</Typography>
-                            <Typography variant="body2" color="text.secondary">{issue.description}</Typography>
-                            <Typography variant="caption" color="primary">Category: {issue.category}</Typography>
-                          </Popup>
-                        </Marker>
-                      ))}
-                    </MapContainer>
-                  </Box>
-                  <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                    {Object.keys(categoryIcons).map(cat => (
-                      <Box key={cat} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <img src={categoryIcons[cat].options.iconUrl} alt={cat} style={{ width: 24, height: 24 }} />
-                        <Typography variant="body2">{cat}</Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                </Paper>
-              )}
+          <Typography variant="h6" gutterBottom>Interactive Map View (Pune)</Typography>
+          <Box sx={{ width: '100%', height: '60vh', position: 'relative', borderRadius: 2, overflow: 'hidden', boxShadow: 1 }}>
+            <MapContainer center={[18.5204, 73.8567]} zoom={12} style={{ width: '100%', height: '100%' }} scrollWheelZoom={true}>
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {mapIssues.map(issue => (
+                <Marker key={issue.id} position={issue.position} icon={categoryIcons[issue.category]}>
+                  <Popup>
+                    <Typography variant="subtitle2">{issue.title}</Typography>
+                    <Typography variant="body2" color="text.secondary">{issue.description}</Typography>
+                    <Typography variant="caption" color="primary">Category: {issue.category}</Typography>
+                  </Popup>
+                </Marker>
+              ))}
+            </MapContainer>
+          </Box>
+          <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            {Object.keys(categoryIcons).map(cat => (
+              <Box key={cat} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <img src={categoryIcons[cat].options.iconUrl} alt={cat} style={{ width: 24, height: 24 }} />
+                <Typography variant="body2">{cat}</Typography>
+              </Box>
+            ))}
+          </Box>
+        </Paper>
+      )}
 
       {activeTab === 'analytics' && (
         <Box>
@@ -1131,7 +1159,7 @@ const SanitationDashboard = () => {
           <Typography variant="body1" paragraph>
             You have selected {selectedIssues.length} sanitation issues. What would you like to do with them?
           </Typography>
-          
+
           <FormControl fullWidth variant="outlined" size="small" sx={{ mb: 2 }}>
             <InputLabel>Action</InputLabel>
             <Select
@@ -1151,9 +1179,9 @@ const SanitationDashboard = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowBulkDialog(false)}>Cancel</Button>
-          <Button 
-            onClick={handleBulkAction} 
-            variant="contained" 
+          <Button
+            onClick={handleBulkAction}
+            variant="contained"
             color="primary"
             disabled={!bulkAction}
           >
@@ -1163,10 +1191,10 @@ const SanitationDashboard = () => {
       </Dialog>
 
       {/* Issue Details Dialog */}
-      <Dialog 
-        open={showIssueDetails} 
-        onClose={() => setShowIssueDetails(false)} 
-        maxWidth="md" 
+      <Dialog
+        open={showIssueDetails}
+        onClose={() => setShowIssueDetails(false)}
+        maxWidth="md"
         fullWidth
       >
         {selectedIssue && (
@@ -1177,16 +1205,16 @@ const SanitationDashboard = () => {
                 <Grid item xs={12} md={8}>
                   <Typography variant="h6" gutterBottom>{selectedIssue.title}</Typography>
                   <Typography variant="body1" paragraph>{selectedIssue.description}</Typography>
-                  
+
                   <Box sx={{ mb: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
                     <Typography variant="subtitle2" gutterBottom>Location</Typography>
                     <Typography>{selectedIssue.location?.address || 'Location not specified'}</Typography>
-                    
+
                     <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                      <Chip 
-                        label={selectedIssue.status} 
-                        size="small" 
-                        sx={{ 
+                      <Chip
+                        label={selectedIssue.status}
+                        size="small"
+                        sx={{
                           backgroundColor: statusColors[selectedIssue.status] + '1a',
                           color: statusColors[selectedIssue.status],
                           fontWeight: 500,
@@ -1198,40 +1226,40 @@ const SanitationDashboard = () => {
                             textOverflow: 'ellipsis',
                             display: 'block',
                           },
-                        }} 
+                        }}
                       />
-                      <Chip 
-                        label={selectedIssue.priority || 'Medium'} 
-                        size="small" 
+                      <Chip
+                        label={selectedIssue.priority || 'Medium'}
+                        size="small"
                         variant="outlined"
-                        sx={{ 
-                          borderColor: priorityColors[selectedIssue.priority || 'Medium'], 
-                          color: priorityColors[selectedIssue.priority || 'Medium'] 
-                        }} 
+                        sx={{
+                          borderColor: priorityColors[selectedIssue.priority || 'Medium'],
+                          color: priorityColors[selectedIssue.priority || 'Medium']
+                        }}
                       />
                     </Box>
                   </Box>
-                  
+
                   <Box sx={{ mb: 3 }}>
                     <Typography variant="subtitle2" gutterBottom>Attachments</Typography>
                     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                       {selectedIssue.images?.length > 0 ? (
                         selectedIssue.images.map((img, idx) => (
-                          <Box 
-                            key={idx} 
-                            sx={{ 
-                              width: 100, 
-                              height: 100, 
-                              borderRadius: 1, 
+                          <Box
+                            key={idx}
+                            sx={{
+                              width: 100,
+                              height: 100,
+                              borderRadius: 1,
                               overflow: 'hidden',
                               border: '1px solid',
                               borderColor: 'divider'
                             }}
                           >
-                            <img 
-                              src={img} 
-                              alt={`Attachment ${idx + 1}`} 
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                            <img
+                              src={img}
+                              alt={`Attachment ${idx + 1}`}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             />
                           </Box>
                         ))
@@ -1240,7 +1268,7 @@ const SanitationDashboard = () => {
                       )}
                     </Box>
                   </Box>
-                  
+
                   <Box>
                     <Typography variant="subtitle2" gutterBottom>Update Status</Typography>
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -1253,7 +1281,7 @@ const SanitationDashboard = () => {
                             handleStatusChange(selectedIssue.id, status);
                             setSelectedIssue({ ...selectedIssue, status });
                           }}
-                          sx={{ 
+                          sx={{
                             textTransform: 'none',
                             ...(selectedIssue.status === status && {
                               bgcolor: statusColors[status],
@@ -1279,7 +1307,7 @@ const SanitationDashboard = () => {
                       </Box>
                     </CardContent>
                   </Card>
-                  
+
                   <Card variant="outlined">
                     <CardContent>
                       <Typography variant="subtitle2" gutterBottom>Reporter</Typography>
@@ -1296,10 +1324,10 @@ const SanitationDashboard = () => {
                           </Typography>
                         </Box>
                       </Box>
-                      <Button 
-                        fullWidth 
-                        variant="outlined" 
-                        size="small" 
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        size="small"
                         startIcon={<Email />}
                         onClick={() => {
                           setShowMessageDialog(true);
@@ -1316,8 +1344,8 @@ const SanitationDashboard = () => {
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setShowIssueDetails(false)}>Close</Button>
-              <Button 
-                variant="contained" 
+              <Button
+                variant="contained"
                 color="primary"
                 onClick={() => {
                   setShowIssueDetails(false);
@@ -1333,10 +1361,10 @@ const SanitationDashboard = () => {
       </Dialog>
 
       {/* Message Dialog */}
-      <Dialog 
-        open={showMessageDialog} 
-        onClose={() => setShowMessageDialog(false)} 
-        maxWidth="sm" 
+      <Dialog
+        open={showMessageDialog}
+        onClose={() => setShowMessageDialog(false)}
+        maxWidth="sm"
         fullWidth
       >
         <DialogTitle>
@@ -1362,14 +1390,14 @@ const SanitationDashboard = () => {
                 </MenuItem>
               </Select>
             </FormControl>
-            
+
             <TextField
               label="Subject"
               fullWidth
               margin="normal"
               variant="outlined"
             />
-            
+
             <TextField
               label="Message"
               fullWidth
@@ -1381,7 +1409,7 @@ const SanitationDashboard = () => {
               onChange={(e) => setMessage(e.target.value)}
               placeholder={`Type your ${messageType === 'email' ? 'email' : 'notification'} message here...`}
             />
-            
+
             <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
               <AttachFile fontSize="small" color="action" />
               <Typography variant="body2" color="text.secondary">
@@ -1392,14 +1420,14 @@ const SanitationDashboard = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowMessageDialog(false)}>Cancel</Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             color="primary"
             onClick={() => {
               setShowMessageDialog(false);
               showSnackbar(
-                messageType === 'email' 
-                  ? 'Email sent successfully' 
+                messageType === 'email'
+                  ? 'Email sent successfully'
                   : 'Notification sent successfully',
                 'success'
               );
@@ -1411,14 +1439,14 @@ const SanitationDashboard = () => {
       </Dialog>
 
       {/* Snackbar for notifications */}
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
           sx={{ width: '100%' }}
         >

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-
+import { ShieldCheck, Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 
 import SanitationDashboard from './sanitation';
 import Publichealth from './publichealth';
@@ -17,10 +17,13 @@ const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loggedInDepartment, setLoggedInDepartment] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const onSubmitHandler = async (event) => {
     try {
       event.preventDefault();
+      setIsLoading(true);
       const { data } = await axios.post('/api/admin/login', { email, password });
       if (data.success) {
         setAdmin(true);
@@ -33,6 +36,8 @@ const AdminLogin = () => {
       }
     } catch (error) {
       toast.error(error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -48,43 +53,102 @@ const AdminLogin = () => {
   }
 
   return (
-    <div>
-      <form
-        onSubmit={onSubmitHandler}
-        className="min-h-screen flex items-center text-sm text-gray-700"
-      >
-        <div className="flex flex-col gap-5 m-auto items-start p-8 py-12 min-w-80 sm:min-w-88 rounded-lg shadow-xl border border-gray-200">
-          <p className="text-2xl font-medium m-auto">
-            <span className="text-primary"> Admin</span> Login
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-4 py-12">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl mb-4 shadow-lg transform rotate-3 hover:rotate-6 transition-transform">
+            <ShieldCheck className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Admin Portal
+          </h1>
+          <p className="text-gray-600">
+            Secure access for department officials
           </p>
-
-          <div className="w-full">
-            <p>Email</p>
-            <input
-              type="email"
-              placeholder="Enter Your Email"
-              className="border border-gray-200 rounded w-full p-2 mt-1 outline-primary"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="w-full">
-            <p>Password</p>
-            <input
-              type="password"
-              placeholder="Enter Your Password"
-              className="border border-gray-200 rounded w-full p-2 mt-1 outline-primary"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <button className="bg-primary text-white w-full py-2 rounded-md cursor-pointer">
-            Login
-          </button>
         </div>
-      </form>
+
+        {/* Form Card */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 backdrop-blur-sm bg-opacity-90">
+          <div className="mb-6 flex justify-center">
+            <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-semibold tracking-wide uppercase">
+              Official Use Only
+            </span>
+          </div>
+          <form onSubmit={onSubmitHandler} className="space-y-5">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 pl-1">
+                Department Email
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                </div>
+                <input
+                  type="email"
+                  placeholder="department@gov.in"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 pl-1">
+                Secure Password
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  className="w-full pl-10 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transform hover:-translate-y-0.5 transition-all shadow-md flex items-center justify-center space-x-2"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Verifying...</span>
+                </>
+              ) : (
+                <>
+                  <span>Access Dashboard</span>
+                  <ShieldCheck className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+
+        <p className="text-center text-xs text-gray-400 mt-6 max-w-xs mx-auto">
+          Unauthorized access is prohibited and monitored. Please keep your credentials secure.
+        </p>
+      </div>
     </div>
   );
 };
