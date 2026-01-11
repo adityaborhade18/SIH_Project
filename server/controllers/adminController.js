@@ -71,3 +71,13 @@ export const isAdminAuth = async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 }
+
+export const adminLogout = async (req, res) => {
+    try {
+        res.clearCookie('sellertoken');
+        return res.json({ success: true, message: 'Logged out successfully' });
+    } catch (error) {
+        console.log(error.message);
+        res.json({ success: false, message: error.message });
+    }
+}
