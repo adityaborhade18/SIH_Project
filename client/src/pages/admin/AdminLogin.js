@@ -12,10 +12,11 @@ import Electricitydepartment from './electricity';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const { section } = useParams();   
+  const { section } = useParams();
   const [admin, setAdmin] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loggedInDepartment, setLoggedInDepartment] = useState(null);
 
   const onSubmitHandler = async (event) => {
     try {
@@ -23,6 +24,9 @@ const AdminLogin = () => {
       const { data } = await axios.post('/api/admin/login', { email, password });
       if (data.success) {
         setAdmin(true);
+        if (data.department) {
+          setLoggedInDepartment(data.department);
+        }
         toast.success('Login successful');
       } else {
         toast.error(data.message);
@@ -32,13 +36,14 @@ const AdminLogin = () => {
     }
   };
 
-  
+
   if (admin) {
-    if (section === 'sanitation') return <SanitationDashboard />;
-    if (section === 'publichealth') return <Publichealth />;
-    if (section === 'roads') return <RoaddepartmentDashboard />;
-    if (section === 'water') return <Waterdepartment />;
-    if (section === 'electricity') return <Electricitydepartment />;
+    const targetSection = loggedInDepartment || section;
+    if (targetSection === 'sanitation') return <SanitationDashboard />;
+    if (targetSection === 'publichealth') return <Publichealth />;
+    if (targetSection === 'roads') return <RoaddepartmentDashboard />;
+    if (targetSection === 'water') return <Waterdepartment />;
+    if (targetSection === 'electricity') return <Electricitydepartment />;
     return <SanitationDashboard />;
   }
 
