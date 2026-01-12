@@ -298,21 +298,7 @@ export default function ReportIssue() {
 
 
 
-  // const handleImageChange = (e) => {
-  //   const file = e.target.files[0];
-  //   if (!file) return;
 
-  //   const reader = new FileReader();
-  //   reader.onloadend = () => {
-  //     setFormData((prev) => ({
-  //       ...prev,
-  //       image: file,
-  //       imagePreview: reader.result,
-  //     }));
-  //     setErrors((prev) => ({ ...prev, image: null }));
-  //   };
-  //   reader.readAsDataURL(file);
-  // };
 
   const handleCapture = (blob) => {
     const file = new File([blob], "live-photo.jpg", { type: "image/jpeg" });
