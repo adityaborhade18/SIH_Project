@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import DirectionsCar from '@mui/icons-material/DirectionsCar';
 
 import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Select, 
-  MenuItem, 
-  FormControl, 
-  InputLabel, 
-  Avatar, 
-  Chip, 
-  Card, 
+import {
+  Box,
+  Typography,
+  Paper,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Avatar,
+  Chip,
+  Card,
   CardContent,
   Divider,
   IconButton,
@@ -36,12 +37,12 @@ import {
   ListItemIcon,
   ListItemText
 } from '@mui/material';
-import { 
-  CheckCircleOutline, 
-  PendingActions, 
-  Build, 
-  Warning, 
-  Refresh, 
+import {
+  CheckCircleOutline,
+  PendingActions,
+  Build,
+  Warning,
+  Refresh,
   FilterList,
   MoreVert,
   LocationOn,
@@ -88,7 +89,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 const statusOptions = ['Pending', 'In Process', 'Assigned', 'Solved', 'Rejected'];
 const priorityLevels = ['Low', 'Medium', 'High', 'Critical'];
-const department = 'Sanitation'; // Single department focus
+const department = 'Electricity'; // Single department focus
 
 const statusColors = {
   'Pending': '#ff9800',
@@ -107,7 +108,45 @@ const priorityColors = {
 
 const Electricitydepartment = () => {
   const theme = useTheme();
-  const { issues, updateIssueStatus } = useIssues();
+  // const { issues, updateIssueStatus } = useIssues(); // Removed context usage
+  const { updateIssueStatus } = useIssues(); // Keep updateIssueStatus if needed, or implement it locally. 
+  // Actually, updateIssueStatus from context might not work if issues are not loaded from context. 
+  // But wait, the previous code used `useIssues`. I should probably implement handleStatusChange to call API.
+
+  const [electricityIssues, setElectricityIssues] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchIssues = async () => {
+      try {
+        const { data } = await axios.get('/api/user/getallissue?department=Electricity');
+        if (data.success) {
+          const mappedIssues = data.issues.map(issue => ({
+            id: issue._id,
+            title: issue.title,
+            description: issue.description,
+            location: {
+              address: issue.address || "No address",
+              coordinates: issue.location?.coordinates || [0, 0]
+            },
+            category: issue.department || 'Electricity',
+            status: issue.status,
+            priority: issue.priority,
+            date: issue.createdAt,
+            reporter: issue.createdBy || { name: 'Unknown', email: '' },
+            images: issue.image ? [issue.image] : []
+          }));
+          setElectricityIssues(mappedIssues);
+        }
+      } catch (error) {
+        console.error("Failed to fetch issues", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchIssues();
+  }, []);
+
   const [selectedIssues, setSelectedIssues] = useState([]);
   const [filters, setFilters] = useState({
     status: [],
@@ -127,29 +166,27 @@ const Electricitydepartment = () => {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('email');
 
-  // Filter issues for Sanitation department only
-  const sanitationIssues = React.useMemo(() => {
-    return issues.filter(issue => issue.department === department);
-  }, [issues]);
+  // Filter issues 
+  // const sanitationIssues = React.useMemo(() => { ... }); // Removed this block
 
   // Filter and sort issues
   const filteredIssues = React.useMemo(() => {
-    return sanitationIssues.filter(issue => {
+    return electricityIssues.filter(issue => { // Updated variable name
       // Apply search query
       if (filters.searchQuery && !`${issue.title} ${issue.description} ${issue.location} ${issue.category}`.toLowerCase().includes(filters.searchQuery.toLowerCase())) {
         return false;
       }
-      
+
       // Apply status filter
       if (filters.status.length > 0 && !filters.status.includes(issue.status)) {
         return false;
       }
-      
+
       // Apply priority filter
       if (filters.priority.length > 0 && !filters.priority.includes(issue.priority)) {
         return false;
       }
-      
+
       // Apply date range filter
       if (filters.dateRange[0] && new Date(issue.date) < filters.dateRange[0]) {
         return false;
@@ -157,7 +194,7 @@ const Electricitydepartment = () => {
       if (filters.dateRange[1] && new Date(issue.date) > filters.dateRange[1]) {
         return false;
       }
-      
+
       return true;
     }).sort((a, b) => {
       // Apply sorting
@@ -172,7 +209,7 @@ const Electricitydepartment = () => {
       }
       return 0;
     });
-  }, [sanitationIssues, filters, sortModel]);
+  }, [electricityIssues, filters, sortModel]);
 
   // Handle status change for single issue
   const handleStatusChange = (id, newStatus) => {
@@ -183,11 +220,11 @@ const Electricitydepartment = () => {
   // Handle bulk actions
   const handleBulkAction = () => {
     if (!bulkAction || selectedIssues.length === 0) return;
-    
+
     selectedIssues.forEach(id => {
       updateIssueStatus(id, bulkAction);
     });
-    
+
     setShowBulkDialog(false);
     setSelectedIssues([]);
     showSnackbar(`Updated status for ${selectedIssues.length} issues`, 'success');
@@ -213,7 +250,7 @@ const Electricitydepartment = () => {
 
   // Prepare data for charts
   const categoryData = React.useMemo(() => {
-    return sanitationIssues.reduce((acc, issue) => {
+    return electricityIssues.reduce((acc, issue) => {
       const existing = acc.find(item => item.name === issue.category);
       if (existing) {
         existing.count += 1;
@@ -222,34 +259,34 @@ const Electricitydepartment = () => {
       }
       return acc;
     }, []);
-  }, [sanitationIssues]);
+  }, [electricityIssues]);
 
   const statusData = React.useMemo(() => [
-    { name: 'Pending', value: sanitationIssues.filter(issue => issue.status === 'Pending').length },
-    { name: 'In Process', value: sanitationIssues.filter(issue => issue.status === 'In Process').length },
-    { name: 'Assigned', value: sanitationIssues.filter(issue => issue.status === 'Assigned').length },
-    { name: 'Solved', value: sanitationIssues.filter(issue => issue.status === 'Solved').length },
-    { name: 'Rejected', value: sanitationIssues.filter(issue => issue.status === 'Rejected').length },
-  ], [sanitationIssues]);
+    { name: 'Pending', value: electricityIssues.filter(issue => issue.status === 'Pending').length },
+    { name: 'In Process', value: electricityIssues.filter(issue => issue.status === 'In Process').length },
+    { name: 'Assigned', value: electricityIssues.filter(issue => issue.status === 'Assigned').length },
+    { name: 'Solved', value: electricityIssues.filter(issue => issue.status === 'Solved').length },
+    { name: 'Rejected', value: electricityIssues.filter(issue => issue.status === 'Rejected').length },
+  ], [electricityIssues]);
 
   // Columns configuration
   const columns = [
-    { 
-      field: 'id', 
-      headerName: 'ID', 
+    {
+      field: 'id',
+      headerName: 'ID',
       width: 80,
-      renderCell: (params) => `#${params.value}` 
+      renderCell: (params) => `#${params.value}`
     },
-    { 
-      field: 'date', 
-      headerName: 'Date', 
+    {
+      field: 'date',
+      headerName: 'Date',
       width: 120,
       renderCell: (params) => new Date(params.value).toLocaleDateString()
     },
-    { 
-      field: 'title', 
-      headerName: 'Title', 
-      flex: 1, 
+    {
+      field: 'title',
+      headerName: 'Title',
+      flex: 1,
       minWidth: 200,
       renderCell: (params) => (
         <Box>
@@ -263,9 +300,9 @@ const Electricitydepartment = () => {
         </Box>
       )
     },
-    { 
-      field: 'priority', 
-      headerName: 'Priority', 
+    {
+      field: 'priority',
+      headerName: 'Priority',
       width: 120,
       renderCell: (params) => (
         <Chip
@@ -283,9 +320,9 @@ const Electricitydepartment = () => {
         />
       )
     },
-    { 
-      field: 'location', 
-      headerName: 'Location', 
+    {
+      field: 'location',
+      headerName: 'Location',
       width: 180,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -357,35 +394,35 @@ const Electricitydepartment = () => {
     },
   ];
 
-  // Stats cards for Sanitation department
+  // Stats cards for Electricity department
   const stats = [
-    { 
-      title: 'Total Reports', 
-      value: sanitationIssues.length,
+    {
+      title: 'Total Reports',
+      value: electricityIssues.length,
       icon: Warning,
       color: theme.palette.primary.main,
       trend: '+12%',
       trendColor: 'success.main'
     },
-    { 
-      title: 'Pending', 
-      value: sanitationIssues.filter(issue => issue.status === 'Pending').length,
+    {
+      title: 'Pending',
+      value: electricityIssues.filter(issue => issue.status === 'Pending').length,
       icon: PendingActions,
       color: '#ff9800',
       trend: '+5%',
       trendColor: 'error.main'
     },
-    { 
-      title: 'In Progress', 
-      value: sanitationIssues.filter(issue => issue.status === 'In Process').length,
+    {
+      title: 'In Progress',
+      value: electricityIssues.filter(issue => issue.status === 'In Process').length,
       icon: Build,
       color: '#2196f3',
       trend: '+8%',
       trendColor: 'success.main'
     },
-    { 
-      title: 'Resolved', 
-      value: sanitationIssues.filter(issue => issue.status === 'Solved').length,
+    {
+      title: 'Resolved',
+      value: electricityIssues.filter(issue => issue.status === 'Solved').length,
       icon: CheckCircleOutline,
       color: '#4caf50',
       trend: '+15%',
@@ -395,26 +432,26 @@ const Electricitydepartment = () => {
 
   // Render the component
   return (
-    <Box sx={{ p: 3 ,py: 8}}>
+    <Box sx={{ p: 3, py: 8 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Sanitation Department Dashboard
+            Electricity Department Dashboard
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Welcome back! Here's what's happening with sanitation services.
+            Welcome back! Here's what's happening with electricity services.
           </Typography>
         </Box>
         <Box display="flex" gap={1}>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             startIcon={<Refresh />}
             onClick={() => window.location.reload()}
           >
             Refresh
           </Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             color="primary"
             startIcon={<FilterList />}
             onClick={() => setAnchorEl(document.getElementById('filter-button'))}
@@ -453,7 +490,7 @@ const Electricitydepartment = () => {
                   ))}
                 </Select>
               </FormControl>
-              
+
               <FormControl fullWidth size="small" sx={{ mb: 2 }}>
                 <InputLabel>Priority</InputLabel>
                 <Select
@@ -470,7 +507,7 @@ const Electricitydepartment = () => {
                   ))}
                 </Select>
               </FormControl>
-              
+
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker
                   label="From Date"
@@ -485,10 +522,10 @@ const Electricitydepartment = () => {
                   renderInput={(params) => <TextField {...params} size="small" fullWidth />}
                 />
               </LocalizationProvider>
-              
+
               <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                <Button 
-                  size="small" 
+                <Button
+                  size="small"
                   onClick={() => setFilters({
                     status: [],
                     priority: [],
@@ -498,9 +535,9 @@ const Electricitydepartment = () => {
                 >
                   Reset
                 </Button>
-                <Button 
-                  variant="contained" 
-                  size="small" 
+                <Button
+                  variant="contained"
+                  size="small"
                   onClick={() => setAnchorEl(null)}
                   sx={{ ml: 1 }}
                 >
@@ -515,7 +552,7 @@ const Electricitydepartment = () => {
       {/* Search and Bulk Actions */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <TextField
-          placeholder="Search sanitation reports..."
+          placeholder="Search electricity reports..."
           variant="outlined"
           size="small"
           value={filters.searchQuery}
@@ -525,7 +562,7 @@ const Electricitydepartment = () => {
             sx: { width: 300 }
           }}
         />
-        
+
         <Box>
           {selectedIssues.length > 0 && (
             <>
@@ -565,23 +602,23 @@ const Electricitydepartment = () => {
           </Avatar>
           <Box>
             <Typography variant="h5" fontWeight="bold">
-              Sanitation Department
+              Electricity Department
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Garbage collection, street cleaning, waste management services
+              Power outages, street light repairs, and electrical maintenance
             </Typography>
           </Box>
         </Box>
-        
+
         {/* Department stats */}
-        <Box sx={{ 
-          display: 'grid', 
-          gap: 2, 
-          gridTemplateColumns: { 
-            xs: '1fr', 
-            sm: 'repeat(2, 1fr)', 
-            md: 'repeat(4, 1fr)' 
-          } 
+        <Box sx={{
+          display: 'grid',
+          gap: 2,
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'repeat(2, 1fr)',
+            md: 'repeat(4, 1fr)'
+          }
         }}>
           <Card variant="outlined">
             <CardContent>
@@ -589,7 +626,7 @@ const Electricitydepartment = () => {
                 Total Issues
               </Typography>
               <Typography variant="h4">
-                {sanitationIssues.length}
+                {electricityIssues.length}
               </Typography>
             </CardContent>
           </Card>
@@ -599,7 +636,7 @@ const Electricitydepartment = () => {
                 Pending
               </Typography>
               <Typography variant="h4" color="#ff9800">
-                {sanitationIssues.filter(issue => issue.status === 'Pending').length}
+                {electricityIssues.filter(issue => issue.status === 'Pending').length}
               </Typography>
             </CardContent>
           </Card>
@@ -609,7 +646,7 @@ const Electricitydepartment = () => {
                 In Progress
               </Typography>
               <Typography variant="h4" color="#2196f3">
-                {sanitationIssues.filter(issue => issue.status === 'In Process').length}
+                {electricityIssues.filter(issue => issue.status === 'In Process').length}
               </Typography>
             </CardContent>
           </Card>
@@ -619,7 +656,7 @@ const Electricitydepartment = () => {
                 Resolved
               </Typography>
               <Typography variant="h4" color="#4caf50">
-                {sanitationIssues.filter(issue => issue.status === 'Solved').length}
+                {electricityIssues.filter(issue => issue.status === 'Solved').length}
               </Typography>
             </CardContent>
           </Card>
@@ -628,34 +665,34 @@ const Electricitydepartment = () => {
 
       {/* Tabs for different views within the department */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs 
-          value={activeTab} 
+        <Tabs
+          value={activeTab}
           onChange={(e, newValue) => setActiveTab(newValue)}
-          aria-label="sanitation department tabs"
+          aria-label="electricity department tabs"
         >
-          <Tab 
-            icon={<BarChartIcon fontSize="small" />} 
+          <Tab
+            icon={<BarChartIcon fontSize="small" />}
             iconPosition="start"
-            label="Overview" 
-            value="overview" 
+            label="Overview"
+            value="overview"
           />
-          <Tab 
+          <Tab
             icon={<MapIcon fontSize="small" />}
             iconPosition="start"
-            label="Map View" 
-            value="map" 
+            label="Map View"
+            value="map"
           />
-          <Tab 
+          <Tab
             icon={<Assessment fontSize="small" />}
             iconPosition="start"
-            label="Analytics" 
-            value="analytics" 
+            label="Analytics"
+            value="analytics"
           />
-          <Tab 
+          <Tab
             icon={<People fontSize="small" />}
             iconPosition="start"
-            label="Team" 
-            value="team" 
+            label="Team"
+            value="team"
           />
         </Tabs>
       </Box>
@@ -664,18 +701,18 @@ const Electricitydepartment = () => {
       {activeTab === 'overview' && (
         <>
           {/* Stats Cards */}
-          <Box sx={{ 
-            display: 'grid', 
-            gap: 3, 
-            gridTemplateColumns: { 
-              xs: '1fr', 
-              sm: 'repeat(2, 1fr)', 
-              lg: 'repeat(4, 1fr)' 
-            }, 
-            mb: 4 
+          <Box sx={{
+            display: 'grid',
+            gap: 3,
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: 'repeat(2, 1fr)',
+              lg: 'repeat(4, 1fr)'
+            },
+            mb: 4
           }}>
             {stats.map((stat, index) => (
-              <Card key={index} variant="outlined" sx={{ 
+              <Card key={index} variant="outlined" sx={{
                 borderLeft: `4px solid ${stat.color}`,
                 height: '100%',
                 display: 'flex',
@@ -686,11 +723,11 @@ const Electricitydepartment = () => {
                 <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                   <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                     <Box sx={{ minWidth: 0 }}>
-                      <Typography 
-                        color="textSecondary" 
-                        variant="subtitle2" 
+                      <Typography
+                        color="textSecondary"
+                        variant="subtitle2"
                         gutterBottom
-                        noWrap  
+                        noWrap
                         sx={{
                           textOverflow: 'ellipsis',
                           overflow: 'hidden'
@@ -699,9 +736,9 @@ const Electricitydepartment = () => {
                         {stat.title}
                       </Typography>
                       <Typography variant="h5" noWrap>{stat.value}</Typography>
-                      <Typography 
-                        variant="caption" 
-                        sx={{ 
+                      <Typography
+                        variant="caption"
+                        sx={{
                           color: stat.trendColor,
                           display: 'flex',
                           alignItems: 'center',
@@ -714,11 +751,11 @@ const Electricitydepartment = () => {
                         {stat.trend} from last week
                       </Typography>
                     </Box>
-                    <Avatar sx={{ 
-                      bgcolor: stat.color + '20', 
+                    <Avatar sx={{
+                      bgcolor: stat.color + '20',
                       color: stat.color,
                       ml: 1,
-                      flexShrink: 0  
+                      flexShrink: 0
                     }}>
                       <stat.icon />
                     </Avatar>
@@ -729,17 +766,17 @@ const Electricitydepartment = () => {
           </Box>
 
           {/* Charts Row */}
-          <Box sx={{ 
-            display: 'grid', 
-            gap: 3, 
-            gridTemplateColumns: { 
-              xs: '1fr', 
-              lg: '1fr 1fr' 
-            }, 
-            mb: 4 
+          <Box sx={{
+            display: 'grid',
+            gap: 3,
+            gridTemplateColumns: {
+              xs: '1fr',
+              lg: '1fr 1fr'
+            },
+            mb: 4
           }}>
             <Paper sx={{ p: 2, height: 350, display: 'flex', flexDirection: 'column' }}>
-              <Typography variant="h6" gutterBottom>Sanitation Issues by Status</Typography>
+              <Typography variant="h6" gutterBottom>Electricity Issues by Status</Typography>
               <Box sx={{ flex: 1, minHeight: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -757,23 +794,23 @@ const Electricitydepartment = () => {
                         const radius = 25 + outerRadius * 0.5;
                         const x = cx + radius * Math.cos(-midAngle * RADIAN);
                         const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                        
+
                         const lineEndX = cx + (outerRadius + 5) * Math.cos(-midAngle * RADIAN);
                         const lineEndY = cy + (outerRadius + 5) * Math.sin(-midAngle * RADIAN);
-                        
+
                         const lineStartX = cx + (outerRadius - 5) * Math.cos(-midAngle * RADIAN);
                         const lineStartY = cy + (outerRadius - 5) * Math.sin(-midAngle * RADIAN);
-                        
+
                         const isLeftSide = x < cx;
                         const textAnchor = isLeftSide ? 'end' : 'start';
                         const xOffset = isLeftSide ? -10 : 10;
-                        
+
                         let yOffset = 0;
                         if (name === 'In Process') yOffset = 8;
                         if (name === 'Solved') yOffset = -8;
                         if (name === 'Pending') yOffset = -5;
                         if (name === 'Rejected') yOffset = 5;
-                        
+
                         return (
                           <g>
                             <line
@@ -808,7 +845,7 @@ const Electricitydepartment = () => {
                       ))}
                     </Pie>
                     <Legend />
-                    <RechartsTooltip 
+                    <RechartsTooltip
                       formatter={(value, name) => [value, name]}
                       labelFormatter={(name) => `Status: ${name}`}
                     />
@@ -839,14 +876,14 @@ const Electricitydepartment = () => {
           <Paper elevation={0} variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
               <Typography variant="h6" component="h2">
-                Recent Sanitation Reports
+                Recent Electricity Reports
               </Typography>
               <Box>
                 <Typography variant="body2" color="text.secondary" display="inline" mr={2}>
                   Total: {filteredIssues.length} issues
                 </Typography>
-                <Button 
-                  size="small" 
+                <Button
+                  size="small"
                   startIcon={<Notifications />}
                   onClick={() => {
                     setShowMessageDialog(true);
@@ -857,7 +894,7 @@ const Electricitydepartment = () => {
                 </Button>
               </Box>
             </Box>
-            
+
             <div style={{ height: 500, width: '100%' }}>
               <DataGrid
                 rows={filteredIssues}
@@ -902,10 +939,10 @@ const Electricitydepartment = () => {
           <Box textAlign="center">
             <MapIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
             <Typography variant="h6" color="text.secondary" gutterBottom>
-              Sanitation Issues Map
+              Electricity Issues Map
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              View garbage collection routes, cleaning schedules, and issue hotspots.
+              View grid infrastructure, maintenance schedules, and outage hotspots.
             </Typography>
             <Button variant="outlined" startIcon={<Timeline />}>
               View Collection Routes
@@ -973,9 +1010,9 @@ const Electricitydepartment = () => {
 
       {activeTab === 'team' && (
         <Paper sx={{ p: 3, minHeight: '60vh' }}>
-          <Typography variant="h6" gutterBottom>Sanitation Team</Typography>
+          <Typography variant="h6" gutterBottom>Electricity Team</Typography>
           <Typography color="text.secondary" paragraph>
-            Manage your sanitation team members and assignments.
+            Manage your electricity team members and assignments.
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 3 }}>
             <Card sx={{ p: 2, width: 200, textAlign: 'center' }}>
@@ -986,7 +1023,7 @@ const Electricitydepartment = () => {
             <Card sx={{ p: 2, width: 200, textAlign: 'center' }}>
               <DirectionsCar color="primary" sx={{ fontSize: 40, mb: 1 }} />
               <Typography variant="h5">12</Typography>
-              <Typography variant="body2" color="text.secondary">Collection Vehicles</Typography>
+              <Typography variant="body2" color="text.secondary">Maintenance Vehicles</Typography>
             </Card>
             <Card sx={{ p: 2, width: 200, textAlign: 'center' }}>
               <CheckCircleOutline color="primary" sx={{ fontSize: 40, mb: 1 }} />
@@ -1002,9 +1039,9 @@ const Electricitydepartment = () => {
         <DialogTitle>Bulk Actions</DialogTitle>
         <DialogContent>
           <Typography variant="body1" paragraph>
-            You have selected {selectedIssues.length} sanitation issues. What would you like to do with them?
+            You have selected {selectedIssues.length} electricity issues. What would you like to do with them?
           </Typography>
-          
+
           <FormControl fullWidth variant="outlined" size="small" sx={{ mb: 2 }}>
             <InputLabel>Action</InputLabel>
             <Select
@@ -1024,9 +1061,9 @@ const Electricitydepartment = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowBulkDialog(false)}>Cancel</Button>
-          <Button 
-            onClick={handleBulkAction} 
-            variant="contained" 
+          <Button
+            onClick={handleBulkAction}
+            variant="contained"
             color="primary"
             disabled={!bulkAction}
           >
@@ -1036,30 +1073,30 @@ const Electricitydepartment = () => {
       </Dialog>
 
       {/* Issue Details Dialog */}
-      <Dialog 
-        open={showIssueDetails} 
-        onClose={() => setShowIssueDetails(false)} 
-        maxWidth="md" 
+      <Dialog
+        open={showIssueDetails}
+        onClose={() => setShowIssueDetails(false)}
+        maxWidth="md"
         fullWidth
       >
         {selectedIssue && (
           <>
-            <DialogTitle>Sanitation Issue Details</DialogTitle>
+            <DialogTitle>Electricity Issue Details</DialogTitle>
             <DialogContent>
               <Grid container spacing={3}>
                 <Grid item xs={12} md={8}>
                   <Typography variant="h6" gutterBottom>{selectedIssue.title}</Typography>
                   <Typography variant="body1" paragraph>{selectedIssue.description}</Typography>
-                  
+
                   <Box sx={{ mb: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
                     <Typography variant="subtitle2" gutterBottom>Location</Typography>
                     <Typography>{selectedIssue.location?.address || 'Location not specified'}</Typography>
-                    
+
                     <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                      <Chip 
-                        label={selectedIssue.status} 
-                        size="small" 
-                        sx={{ 
+                      <Chip
+                        label={selectedIssue.status}
+                        size="small"
+                        sx={{
                           backgroundColor: statusColors[selectedIssue.status] + '1a',
                           color: statusColors[selectedIssue.status],
                           fontWeight: 500,
@@ -1071,40 +1108,40 @@ const Electricitydepartment = () => {
                             textOverflow: 'ellipsis',
                             display: 'block',
                           },
-                        }} 
+                        }}
                       />
-                      <Chip 
-                        label={selectedIssue.priority || 'Medium'} 
-                        size="small" 
+                      <Chip
+                        label={selectedIssue.priority || 'Medium'}
+                        size="small"
                         variant="outlined"
-                        sx={{ 
-                          borderColor: priorityColors[selectedIssue.priority || 'Medium'], 
-                          color: priorityColors[selectedIssue.priority || 'Medium'] 
-                        }} 
+                        sx={{
+                          borderColor: priorityColors[selectedIssue.priority || 'Medium'],
+                          color: priorityColors[selectedIssue.priority || 'Medium']
+                        }}
                       />
                     </Box>
                   </Box>
-                  
+
                   <Box sx={{ mb: 3 }}>
                     <Typography variant="subtitle2" gutterBottom>Attachments</Typography>
                     <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                       {selectedIssue.images?.length > 0 ? (
                         selectedIssue.images.map((img, idx) => (
-                          <Box 
-                            key={idx} 
-                            sx={{ 
-                              width: 100, 
-                              height: 100, 
-                              borderRadius: 1, 
+                          <Box
+                            key={idx}
+                            sx={{
+                              width: 100,
+                              height: 100,
+                              borderRadius: 1,
                               overflow: 'hidden',
                               border: '1px solid',
                               borderColor: 'divider'
                             }}
                           >
-                            <img 
-                              src={img} 
-                              alt={`Attachment ${idx + 1}`} 
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                            <img
+                              src={img}
+                              alt={`Attachment ${idx + 1}`}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             />
                           </Box>
                         ))
@@ -1113,7 +1150,7 @@ const Electricitydepartment = () => {
                       )}
                     </Box>
                   </Box>
-                  
+
                   <Box>
                     <Typography variant="subtitle2" gutterBottom>Update Status</Typography>
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -1126,7 +1163,7 @@ const Electricitydepartment = () => {
                             handleStatusChange(selectedIssue.id, status);
                             setSelectedIssue({ ...selectedIssue, status });
                           }}
-                          sx={{ 
+                          sx={{
                             textTransform: 'none',
                             ...(selectedIssue.status === status && {
                               bgcolor: statusColors[status],
@@ -1147,12 +1184,12 @@ const Electricitydepartment = () => {
                       <Box sx={{ '& > div': { mb: 1 } }}>
                         <div><strong>Reported:</strong> {new Date(selectedIssue.date).toLocaleDateString()}</div>
                         <div><strong>Category:</strong> {selectedIssue.category || 'N/A'}</div>
-                        <div><strong>Department:</strong> Sanitation</div>
+                        <div><strong>Department:</strong> Electricity</div>
                         <div><strong>Priority:</strong> {selectedIssue.priority || 'Medium'}</div>
                       </Box>
                     </CardContent>
                   </Card>
-                  
+
                   <Card variant="outlined">
                     <CardContent>
                       <Typography variant="subtitle2" gutterBottom>Reporter</Typography>
@@ -1169,10 +1206,10 @@ const Electricitydepartment = () => {
                           </Typography>
                         </Box>
                       </Box>
-                      <Button 
-                        fullWidth 
-                        variant="outlined" 
-                        size="small" 
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        size="small"
                         startIcon={<Email />}
                         onClick={() => {
                           setShowMessageDialog(true);
@@ -1189,8 +1226,8 @@ const Electricitydepartment = () => {
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setShowIssueDetails(false)}>Close</Button>
-              <Button 
-                variant="contained" 
+              <Button
+                variant="contained"
                 color="primary"
                 onClick={() => {
                   setShowIssueDetails(false);
@@ -1206,10 +1243,10 @@ const Electricitydepartment = () => {
       </Dialog>
 
       {/* Message Dialog */}
-      <Dialog 
-        open={showMessageDialog} 
-        onClose={() => setShowMessageDialog(false)} 
-        maxWidth="sm" 
+      <Dialog
+        open={showMessageDialog}
+        onClose={() => setShowMessageDialog(false)}
+        maxWidth="sm"
         fullWidth
       >
         <DialogTitle>
@@ -1235,14 +1272,14 @@ const Electricitydepartment = () => {
                 </MenuItem>
               </Select>
             </FormControl>
-            
+
             <TextField
               label="Subject"
               fullWidth
               margin="normal"
               variant="outlined"
             />
-            
+
             <TextField
               label="Message"
               fullWidth
@@ -1254,7 +1291,7 @@ const Electricitydepartment = () => {
               onChange={(e) => setMessage(e.target.value)}
               placeholder={`Type your ${messageType === 'email' ? 'email' : 'notification'} message here...`}
             />
-            
+
             <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
               <AttachFile fontSize="small" color="action" />
               <Typography variant="body2" color="text.secondary">
@@ -1265,14 +1302,14 @@ const Electricitydepartment = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowMessageDialog(false)}>Cancel</Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             color="primary"
             onClick={() => {
               setShowMessageDialog(false);
               showSnackbar(
-                messageType === 'email' 
-                  ? 'Email sent successfully' 
+                messageType === 'email'
+                  ? 'Email sent successfully'
                   : 'Notification sent successfully',
                 'success'
               );
@@ -1284,14 +1321,14 @@ const Electricitydepartment = () => {
       </Dialog>
 
       {/* Snackbar for notifications */}
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
           sx={{ width: '100%' }}
         >
