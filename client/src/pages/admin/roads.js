@@ -1,15 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Select, 
-  MenuItem, 
-  FormControl, 
-  InputLabel, 
-  Avatar, 
-  Chip, 
-  Card, 
+import axios from 'axios';
+import {
+  Box,
+  Typography,
+  Paper,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Avatar,
+  Chip,
+  Card,
   CardContent,
   IconButton,
   Tooltip,
@@ -27,11 +28,11 @@ import {
   Menu,
   ListItemText
 } from '@mui/material';
-import { 
-  CheckCircleOutline, 
-  PendingActions, 
-  Build, 
-  Warning, 
+import {
+  CheckCircleOutline,
+  PendingActions,
+  Build,
+  Warning,
   FilterList,
   Search,
   Assignment,
@@ -159,105 +160,41 @@ const roadsIcon = new L.Icon({
 });
 
 const RoadsTransportDashboard = () => {
-  // Dummy roads and transport issues data
-  const roadsIssues = [
-    {
-      id: 1,
-      title: 'Potholes on Baner Road',
-      description: 'Large potholes causing accidents and vehicle damage.',
-      location: { address: 'Baner Road, Pune', coordinates: [18.5074, 73.8077] },
-      category: 'Road Damage',
-      status: 'Pending',
-      priority: 'Critical',
-      date: new Date().toISOString(),
-      reporter: { name: 'Vikram Singh', email: 'vikram@example.com' },
-      images: [],
-    },
-    {
-      id: 2,
-      title: 'Broken streetlights on Aundh Road',
-      description: 'Streetlights not working for 500 meters.',
-      location: { address: 'Aundh Road, Pune', coordinates: [18.5603, 73.8065] },
-      category: 'Street Lights',
-      status: 'Assigned',
-      priority: 'High',
-      date: new Date().toISOString(),
-      reporter: { name: 'Priya Sharma', email: 'priya@example.com' },
-      images: [],
-    },
-    {
-      id: 3,
-      title: 'Traffic light malfunction',
-      description: 'Signal not working at busy crossing.',
-      location: { address: 'Magarpatta, Pune', coordinates: [18.4965, 73.9447] },
-      category: 'Traffic Signals',
-      status: 'In Process',
-      priority: 'Critical',
-      date: new Date().toISOString(),
-      reporter: { name: 'Rahul Mehta', email: 'rahul@example.com' },
-      images: [],
-    },
-    {
-      id: 4,
-      title: 'Damaged bridge near Bibwewadi',
-      description: 'Bridge unsafe for heavy vehicles.',
-      location: { address: 'Bibwewadi, Pune', coordinates: [18.4751, 73.8680] },
-      category: 'Infrastructure',
-      status: 'Solved',
-      priority: 'High',
-      date: new Date().toISOString(),
-      reporter: { name: 'Anjali Patil', email: 'anjali@example.com' },
-      images: [],
-    },
-    {
-      id: 5,
-      title: 'Streetlights fused in Shivaji Nagar',
-      description: 'Area completely dark after 8 PM.',
-      location: { address: 'Shivaji Nagar, Pune', coordinates: [18.5300, 73.8050] },
-      category: 'Street Lights',
-      status: 'Pending',
-      priority: 'Medium',
-      date: new Date().toISOString(),
-      reporter: { name: 'Mohan Kumar', email: 'mohan@example.com' },
-      images: [],
-    },
-    {
-      id: 6,
-      title: 'Road cave-in near FC Road',
-      description: 'Road sinking, dangerous for commuters.',
-      location: { address: 'FC Road, Pune', coordinates: [18.5204, 73.8567] },
-      category: 'Road Damage',
-      status: 'Assigned',
-      priority: 'Critical',
-      date: new Date().toISOString(),
-      reporter: { name: 'Sneha Reddy', email: 'sneha@example.com' },
-      images: [],
-    },
-    {
-      id: 7,
-      title: 'Heavy traffic congestion',
-      description: 'Traffic jam near Shivajinagar station.',
-      location: { address: 'Shivajinagar, Pune', coordinates: [18.5310, 73.8446] },
-      category: 'Traffic Management',
-      status: 'In Process',
-      priority: 'High',
-      date: new Date().toISOString(),
-      reporter: { name: 'Rajesh Nair', email: 'rajesh@example.com' },
-      images: [],
-    },
-    {
-      id: 8,
-      title: 'Damaged speed breaker',
-      description: 'Speed breaker damaged causing vehicle damage.',
-      location: { address: 'Swargate, Pune', coordinates: [18.5145, 73.8451] },
-      category: 'Road Safety',
-      status: 'Solved',
-      priority: 'Medium',
-      date: new Date().toISOString(),
-      reporter: { name: 'Arun Joshi', email: 'arun@example.com' },
-      images: [],
-    },
-  ];
+  const [roadsIssues, setRoadsIssues] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    const fetchIssues = async () => {
+      try {
+        // Fetch 'Roads' department issues. Or 'Roads & Transport' if I named it that.
+        // In issueController, I mapped 'pothole' -> 'Roads'.
+        const { data } = await axios.get('/api/user/getallissue?department=Roads');
+        if (data.success) {
+          const mappedIssues = data.issues.map(issue => ({
+            id: issue._id,
+            title: issue.title,
+            description: issue.description,
+            location: {
+              address: issue.address || "No address",
+              coordinates: issue.location?.coordinates || [0, 0]
+            },
+            category: issue.department || 'Roads',
+            status: issue.status,
+            priority: issue.priority,
+            date: issue.createdAt,
+            reporter: issue.createdBy || { name: 'Unknown', email: '' },
+            images: issue.image ? [issue.image] : []
+          }));
+          setRoadsIssues(mappedIssues);
+        }
+      } catch (error) {
+        console.error("Failed to fetch issues", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchIssues();
+  }, []);
 
   const [selectedIssues, setSelectedIssues] = useState([]);
   const [filters, setFilters] = useState({
@@ -347,15 +284,15 @@ const RoadsTransportDashboard = () => {
 
   // Columns for DataGrid
   const columns = [
-    { 
-      field: 'date', 
-      headerName: 'Date', 
+    {
+      field: 'date',
+      headerName: 'Date',
       width: 120,
       renderCell: (params) => new Date(params.value).toLocaleDateString()
     },
-    { 
-      field: 'title', 
-      headerName: 'Issue', 
+    {
+      field: 'title',
+      headerName: 'Issue',
       flex: 1,
       renderCell: (params) => (
         <Box>
@@ -366,9 +303,9 @@ const RoadsTransportDashboard = () => {
         </Box>
       )
     },
-    { 
-      field: 'priority', 
-      headerName: 'Priority', 
+    {
+      field: 'priority',
+      headerName: 'Priority',
       width: 120,
       renderCell: (params) => (
         <Chip
@@ -383,9 +320,9 @@ const RoadsTransportDashboard = () => {
         />
       )
     },
-    { 
-      field: 'location', 
-      headerName: 'Location', 
+    {
+      field: 'location',
+      headerName: 'Location',
       width: 150,
       renderCell: (params) => params.value.address.split(',')[0]
     },
@@ -398,7 +335,7 @@ const RoadsTransportDashboard = () => {
           value={params.value}
           onChange={(e) => handleStatusChange(params.id, e.target.value)}
           size="small"
-          sx={{ 
+          sx={{
             width: '100%',
             '& .MuiSelect-select': { py: 0.5 }
           }}
@@ -446,10 +383,10 @@ const RoadsTransportDashboard = () => {
             sx: { width: 300 }
           }}
         />
-        
+
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             startIcon={<FilterList />}
             onClick={(e) => setAnchorEl(e.currentTarget)}
           >
@@ -501,7 +438,7 @@ const RoadsTransportDashboard = () => {
               ))}
             </Select>
           </FormControl>
-          
+
           <FormControl fullWidth size="small" sx={{ mb: 2 }}>
             <InputLabel>Priority</InputLabel>
             <Select
@@ -518,7 +455,7 @@ const RoadsTransportDashboard = () => {
               ))}
             </Select>
           </FormControl>
-          
+
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <DatePicker
               label="From Date"
@@ -533,10 +470,10 @@ const RoadsTransportDashboard = () => {
               renderInput={(params) => <TextField {...params} size="small" fullWidth />}
             />
           </LocalizationProvider>
-          
+
           <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button 
-              size="small" 
+            <Button
+              size="small"
               onClick={() => setFilters({
                 status: [],
                 priority: [],
@@ -546,9 +483,9 @@ const RoadsTransportDashboard = () => {
             >
               Reset
             </Button>
-            <Button 
-              variant="contained" 
-              size="small" 
+            <Button
+              variant="contained"
+              size="small"
               onClick={() => setAnchorEl(null)}
               sx={{ ml: 1 }}
             >
@@ -559,9 +496,9 @@ const RoadsTransportDashboard = () => {
       </Menu>
 
       {/* Stats Cards */}
-      <Box sx={{ 
-        display: 'grid', 
-        gap: 2, 
+      <Box sx={{
+        display: 'grid',
+        gap: 2,
         gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
         mb: 3
       }}>
@@ -583,8 +520,8 @@ const RoadsTransportDashboard = () => {
       </Box>
 
       {/* Tabs */}
-      <Tabs 
-        value={activeTab} 
+      <Tabs
+        value={activeTab}
         onChange={(e, newValue) => setActiveTab(newValue)}
         sx={{ mb: 3 }}
       >
@@ -649,7 +586,7 @@ const RoadsTransportDashboard = () => {
                 setSelectedIssue(params.row);
                 setShowIssueDetails(true);
               }}
-              sx={{ 
+              sx={{
                 border: 'none',
                 '& .MuiDataGrid-row:hover': { cursor: 'pointer' }
               }}
@@ -811,7 +748,7 @@ const RoadsTransportDashboard = () => {
               </Card>
             </Grid>
           </Grid>
-          
+
           <Box sx={{ mt: 4 }}>
             <Typography variant="h6" gutterBottom>Team Contact & Resources</Typography>
             <Grid container spacing={2}>
@@ -834,7 +771,7 @@ const RoadsTransportDashboard = () => {
                 </Card>
               </Grid>
             </Grid>
-            
+
             <Box sx={{ mt: 3 }}>
               <Typography variant="subtitle2" gutterBottom>Active Projects</Typography>
               <Grid container spacing={2}>
@@ -894,8 +831,8 @@ const RoadsTransportDashboard = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowBulkDialog(false)}>Cancel</Button>
-          <Button 
-            onClick={handleBulkAction} 
+          <Button
+            onClick={handleBulkAction}
             variant="contained"
             disabled={!bulkAction}
           >
@@ -911,14 +848,14 @@ const RoadsTransportDashboard = () => {
             <DialogTitle>{selectedIssue.title}</DialogTitle>
             <DialogContent>
               <Typography gutterBottom>{selectedIssue.description}</Typography>
-              
+
               <Grid container spacing={2} sx={{ mt: 1 }}>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">Status</Typography>
-                  <Chip 
-                    label={selectedIssue.status} 
+                  <Chip
+                    label={selectedIssue.status}
                     size="small"
-                    sx={{ 
+                    sx={{
                       bgcolor: statusColors[selectedIssue.status] + '20',
                       color: statusColors[selectedIssue.status]
                     }}
@@ -926,10 +863,10 @@ const RoadsTransportDashboard = () => {
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">Priority</Typography>
-                  <Chip 
-                    label={selectedIssue.priority} 
+                  <Chip
+                    label={selectedIssue.priority}
                     size="small"
-                    sx={{ 
+                    sx={{
                       bgcolor: priorityColors[selectedIssue.priority] + '20',
                       color: priorityColors[selectedIssue.priority]
                     }}
@@ -977,7 +914,7 @@ const RoadsTransportDashboard = () => {
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setShowIssueDetails(false)}>Close</Button>
-              <Button 
+              <Button
                 variant="contained"
                 onClick={() => {
                   setShowMessageDialog(true);
@@ -1013,7 +950,7 @@ const RoadsTransportDashboard = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowMessageDialog(false)}>Cancel</Button>
-          <Button 
+          <Button
             variant="contained"
             onClick={() => {
               setShowMessageDialog(false);
@@ -1027,7 +964,7 @@ const RoadsTransportDashboard = () => {
 
       {/* Snackbar */}
       {snackbar.open && (
-        <Alert 
+        <Alert
           severity={snackbar.severity}
           onClose={() => setSnackbar({ ...snackbar, open: false })}
           sx={{ position: 'fixed', bottom: 20, right: 20, minWidth: 300 }}

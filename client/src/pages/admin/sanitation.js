@@ -295,57 +295,41 @@ const SanitationDashboard = () => {
   const theme = useTheme();
   const { updateIssueStatus } = useIssues();
 
-  // Dummy sanitation issues for development/testing
-  const issues = [
-    {
-      id: 1,
-      title: 'Garbage not collected',
-      description: 'Overflowing bins near FC Road.',
-      location: { address: 'FC Road, Pune', coordinates: [18.5204, 73.8567] },
-      category: 'Sanitation',
-      status: 'Pending',
-      priority: 'High',
-      date: new Date().toISOString(),
-      reporter: { name: 'John Doe', email: 'john@example.com' },
-      images: [],
-    },
-    {
-      id: 2,
-      title: 'Open dumping',
-      description: 'Waste dumped near Swargate bus stand.',
-      location: { address: 'Swargate, Pune', coordinates: [18.5145, 73.8451] },
-      category: 'Sanitation',
-      status: 'Assigned',
-      priority: 'Medium',
-      date: new Date().toISOString(),
-      reporter: { name: 'Jane Smith', email: 'jane@example.com' },
-      images: [],
-    },
-    {
-      id: 3,
-      title: 'Uncollected garbage',
-      description: 'Katraj depot road full of garbage.',
-      location: { address: 'Katraj, Pune', coordinates: [18.4871, 73.8079] },
-      category: 'Sanitation',
-      status: 'In Process',
-      priority: 'Low',
-      date: new Date().toISOString(),
-      reporter: { name: 'Amit Kumar', email: 'amit@example.com' },
-      images: [],
-    },
-    {
-      id: 4,
-      title: 'Dirty public toilet',
-      description: 'Unhygienic condition at Camp bus stand toilet.',
-      location: { address: 'Camp, Pune', coordinates: [18.5081, 73.8415] },
-      category: 'Sanitation',
-      status: 'Solved',
-      priority: 'Critical',
-      date: new Date().toISOString(),
-      reporter: { name: 'Priya Singh', email: 'priya@example.com' },
-      images: [],
-    },
-  ];
+  const [sanitationIssues, setSanitationIssues] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchIssues = async () => {
+      try {
+        const { data } = await axios.get('/api/user/getallissue?department=Sanitation');
+        if (data.success) {
+          const mappedIssues = data.issues.map(issue => ({
+            id: issue._id,
+            title: issue.title,
+            description: issue.description,
+            location: {
+              address: issue.address || "No address",
+              coordinates: issue.location?.coordinates || [0, 0]
+            },
+            category: issue.department || 'Sanitation',
+            status: issue.status,
+            priority: issue.priority,
+            date: issue.createdAt,
+            reporter: issue.createdBy || { name: 'Unknown', email: '' },
+            images: issue.image ? [issue.image] : []
+          }));
+          setSanitationIssues(mappedIssues);
+        }
+      } catch (error) {
+        console.error("Failed to fetch issues", error);
+        toast.error("Failed to load issues");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchIssues();
+  }, []);
+
   const [selectedIssues, setSelectedIssues] = useState([]);
   const [filters, setFilters] = useState({
     status: [],
@@ -365,8 +349,6 @@ const SanitationDashboard = () => {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('email');
 
-  // Use all dummy issues for the dashboard
-  const sanitationIssues = issues;
 
   // Filter and sort issues
   const filteredIssues = React.useMemo(() => {
