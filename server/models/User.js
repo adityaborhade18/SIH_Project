@@ -43,6 +43,9 @@ const userSchema = new mongoose.Schema(
         title: {
           type: String,
         },
+        department: {
+          type: String,
+        },
         description: {
           type: String,
         },

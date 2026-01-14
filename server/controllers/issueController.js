@@ -38,19 +38,23 @@ export const createIssue = async (req, res) => {
     let finalDepartment = "Other";
 
     // AI Classification
+    // AI Classification
     if (imageUrl) {
-      try {
-        console.log("Analyzing image with Gemini...");
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      if (!process.env.GEMINI_API_KEY) {
+        console.warn("GEMINI_API_KEY is missing. Skipping AI classification.");
+      } else {
+        try {
+          console.log("Analyzing image with Gemini...");
+          const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        // Fetch image from Cloudinary/URL
-        const imageResp = await fetch(imageUrl);
-        const arrayBuffer = await imageResp.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const base64Image = buffer.toString('base64');
+          // Fetch image from Cloudinary/URL
+          const imageResp = await fetch(imageUrl);
+          const arrayBuffer = await imageResp.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          const base64Image = buffer.toString('base64');
 
-        const prompt = `Analyze this civic issue image.
+          const prompt = `Analyze this civic issue image.
             Classify it into EXACTLY ONE of these departments: 'Sanitation', 'Roads', 'Electricity', 'Water', 'PublicHealth', 'Other'.
             Also provide a short, descriptive title (max 5-6 words) for the issue (e.g., 'Large Pothole', 'Overflowing Garbage Bin', 'Broken Street Light').
             
@@ -60,28 +64,33 @@ export const createIssue = async (req, res) => {
               "title": "..."
             }`;
 
-        const result = await model.generateContent([
-          prompt,
-          {
-            inlineData: {
-              data: base64Image,
-              mimeType: req.file.mimetype || "image/jpeg"
+          const result = await model.generateContent([
+            prompt,
+            {
+              inlineData: {
+                data: base64Image,
+                mimeType: req.file.mimetype || "image/jpeg"
+              }
             }
+          ]);
+
+          const responseText = result.response.text();
+          console.log("Gemini Raw Response:", responseText);
+
+          // Robust JSON parsing
+          const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const aiData = JSON.parse(jsonMatch[0]);
+            if (aiData.department) finalDepartment = aiData.department;
+            if (aiData.title) finalTitle = aiData.title;
+            console.log("AI Result:", { finalTitle, finalDepartment });
+          } else {
+            console.warn("Could not parse JSON from Gemini response");
           }
-        ]);
 
-        const responseText = result.response.text();
-        // Clean markdown
-        const cleanText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const aiData = JSON.parse(cleanText);
-
-        if (aiData.department) finalDepartment = aiData.department;
-        if (aiData.title) finalTitle = aiData.title;
-
-        console.log("AI Result:", { finalTitle, finalDepartment });
-
-      } catch (aiError) {
-        console.error("AI Classification failed:", aiError);
+        } catch (aiError) {
+          console.error("AI Classification failed:", aiError);
+        }
       }
     }
 

@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
+dotenv.config();
 import connectDB from "./config/db.js";
 import userRouter from "./routes/userRouter.js";
 import issueRouter from "./routes/issueRouter.js";
@@ -12,14 +13,14 @@ const app = express();
 
 const PORT = process.env.PORT || 5000;
 
-const allowedOrigin=['http://localhost:3000']
+const allowedOrigin = ['http://localhost:3000']
 
 // Connect to Database
 connectDB();
 
 // Middleware
-app.use(cors({origin:allowedOrigin,credentials:true}));
-app.use(express.json()); 
+app.use(cors({ origin: allowedOrigin, credentials: true }));
+app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
 app.use(cookieParser());
@@ -42,4 +43,4 @@ app.listen(PORT, () => {
   console.log(`App is listening on port ${PORT}`);
 });
 
-   
+
