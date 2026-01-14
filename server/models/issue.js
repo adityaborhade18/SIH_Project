@@ -13,6 +13,12 @@ const issueSchema = new mongoose.Schema(
       required: true,
     },
 
+    department: {
+      type: String,
+      enum: ["Sanitation", "Roads", "Electricity", "Water", "PublicHealth", "Other"],
+      default: "Other",
+    },
+
     image: {
       type: String,
     },

@@ -1,6 +1,7 @@
 import Issue from "../models/issue.js";
 import User from '../models/User.js';
 import mongoose from 'mongoose'
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 
 
@@ -9,7 +10,7 @@ export const createIssue = async (req, res) => {
   try {
     const { title, description, priority, location } = req.body;
     const userId = req.user.id;
-    
+
     // Validate required fields
     if (!title || !description || !location) {
       return res.status(400).json({
@@ -33,9 +34,74 @@ export const createIssue = async (req, res) => {
 
     const imageUrl = req.file ? req.file.path : null;
 
+    let finalTitle = title.trim();
+    let finalDepartment = "Other";
+
+    // AI Classification
+    if (imageUrl) {
+      try {
+        console.log("Analyzing image with Gemini...");
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        // Fetch image from Cloudinary/URL
+        const imageResp = await fetch(imageUrl);
+        const arrayBuffer = await imageResp.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const base64Image = buffer.toString('base64');
+
+        const prompt = `Analyze this civic issue image.
+            Classify it into EXACTLY ONE of these departments: 'Sanitation', 'Roads', 'Electricity', 'Water', 'PublicHealth', 'Other'.
+            Also provide a short, descriptive title (max 5-6 words) for the issue (e.g., 'Large Pothole', 'Overflowing Garbage Bin', 'Broken Street Light').
+            
+            Return ONLY a raw JSON object with no markdown formatting:
+            {
+              "department": "...",
+              "title": "..."
+            }`;
+
+        const result = await model.generateContent([
+          prompt,
+          {
+            inlineData: {
+              data: base64Image,
+              mimeType: req.file.mimetype || "image/jpeg"
+            }
+          }
+        ]);
+
+        const responseText = result.response.text();
+        // Clean markdown
+        const cleanText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const aiData = JSON.parse(cleanText);
+
+        if (aiData.department) finalDepartment = aiData.department;
+        if (aiData.title) finalTitle = aiData.title;
+
+        console.log("AI Result:", { finalTitle, finalDepartment });
+
+      } catch (aiError) {
+        console.error("AI Classification failed:", aiError);
+      }
+    }
+
+    // If no AI or AI failed (still "Other"), try keyword matching on title
+    if (finalDepartment === "Other") {
+      const t = finalTitle.toLowerCase();
+      if (t.includes('garbage') || t.includes('waste') || t.includes('dump') || t.includes('clean') || t.includes('dustbin')) finalDepartment = 'Sanitation';
+      else if (t.includes('road') || t.includes('pothole') || t.includes('traffic') || t.includes('street')) finalDepartment = 'Roads';
+      else if (t.includes('light') || t.includes('power') || t.includes('electric') || t.includes('pole') || t.includes('wire')) finalDepartment = 'Electricity';
+      else if (t.includes('water') || t.includes('leak') || t.includes('pipe') || t.includes('drain')) finalDepartment = 'Water';
+      else if (t.includes('health') || t.includes('mosquito') || t.includes('dengue') || t.includes('malaria') || t.includes('doctor') || t.includes('clinic')) finalDepartment = 'PublicHealth';
+    }
+
+    // Ensure department is valid enum
+    const validDepts = ["Sanitation", "Roads", "Electricity", "Water", "PublicHealth", "Other"];
+    if (!validDepts.includes(finalDepartment)) finalDepartment = "Other";
+
     // Check for duplicate issue of same type within 100 meters
     const duplicate = await Issue.findOne({
-      title, // check duplicates by issue type
+      title: finalTitle, // check duplicates by issue type
       location: {
         $near: {
           $geometry: {
@@ -57,7 +123,8 @@ export const createIssue = async (req, res) => {
 
     // Create new issue
     const issue = new Issue({
-      title: title.trim(), // this is your issue type
+      title: finalTitle,
+      department: finalDepartment,
       description: description.trim(),
       priority: priority || "Low",
       location: {
@@ -79,6 +146,7 @@ export const createIssue = async (req, res) => {
           issues: {
             issueId: issue._id,
             title: issue.title,
+            department: issue.department,
             description: issue.description,
             status: issue.status,
             priority: issue.priority,
@@ -100,7 +168,7 @@ export const createIssue = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "Issue reported successfully!",
+      message: "Issue reported successfully! Assigned to " + finalDepartment,
       issue,
     });
   } catch (error) {
@@ -114,8 +182,12 @@ export const createIssue = async (req, res) => {
 // GET: All issues with user information
 export const getAllIssue = async (req, res) => {
   try {
-    const issues = await Issue.find()
-      .populate('createdBy', 'name email address') // Populate user info
+    const { department } = req.query;
+    const filter = {};
+    if (department) filter.department = department;
+
+    const issues = await Issue.find(filter)
+      .populate('createdBy', 'name email address')
       .sort({ createdAt: -1 });
     res.status(200).json({ success: true, issues });
   } catch (error) {
@@ -169,7 +241,7 @@ export const getIssueById = async (req, res) => {
 export const getUserIssues = async (req, res) => {
   try {
     const userId = req.user.id;
-    
+
 
     // Option 1: Get from User collection (embedded documents)
     const user = await User.findById(userId).select('issues');
