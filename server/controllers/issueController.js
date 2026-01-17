@@ -38,7 +38,6 @@ export const createIssue = async (req, res) => {
     let finalDepartment = "Other";
 
     // AI Classification
-    // AI Classification
     if (imageUrl) {
       if (!process.env.GEMINI_API_KEY) {
         console.warn("GEMINI_API_KEY is missing. Skipping AI classification.");
@@ -46,7 +45,7 @@ export const createIssue = async (req, res) => {
         try {
           console.log("Analyzing image with Gemini...");
           const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
 
           // Fetch image from Cloudinary/URL
           const imageResp = await fetch(imageUrl);
