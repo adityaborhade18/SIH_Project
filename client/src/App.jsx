@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { IssueProvider } from './context/IssueContext';
+import AuthProvider from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 import axios from 'axios';
 import { Loader2 } from 'lucide-react';
@@ -27,151 +28,70 @@ import Waterdepartment from './pages/admin/water';
 import Electricitydepartment from './pages/admin/electricity';
 import AdminLogin from './pages/admin/AdminLogin';
 
-const ProtectedRoute = ({ children }) => {
-  const [loading, setLoading] = useState(true);
-  const [authenticated, setAuthenticated] = useState(false);
-  const location = useLocation();
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await axios.get("/api/user/me", {
-          withCredentials: true,
-        });
-
-        if (res.data?.user) {
-          setAuthenticated(true);
-        } else {
-          setAuthenticated(false);
-        }
-      } catch (err) {
-        setAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Verifying authentication...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!authenticated) {
-    return <Navigate to="/loginn" replace state={{ from: location }} />;
-  }
-
-  return children;
-};
-
-const PublicRoute = ({ children }) => {
-  const [loading, setLoading] = useState(true);
-  const [authenticated, setAuthenticated] = useState(false);
-  const location = useLocation();
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        await axios.get('/api/user/me', {
-          withCredentials: true,
-        });
-        setAuthenticated(true);
-      } catch (err) {
-        setAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (authenticated && location.pathname === '/loginn') {
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
-};
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   const isAdminPath = useLocation().pathname.startsWith("/admin");
 
   return (
-    <IssueProvider>
-      <Toaster position="top-center" toastOptions={{
-        duration: 3000,
-        style: {
-          background: '#363636',
-          color: '#fff',
-        },
-        success: {
+    <AuthProvider>
+      <IssueProvider>
+        <Toaster position="top-center" toastOptions={{
+          duration: 3000,
           style: {
-            background: '#22c55e',
+            background: '#363636',
+            color: '#fff',
           },
-        },
-        error: {
-          style: {
-            background: '#ef4444',
+          success: {
+            style: {
+              background: '#22c55e',
+            },
           },
-        },
-      }} />
-      <div className="app flex flex-col min-h-screen">
-        {!isAdminPath && <Navbar />}
-        <main className="flex-1">
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/track-issue" element={<IssueTracker />} />
-            <Route path="/issue/:id" element={<IssueDetails />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/loginn" element={<Loginn />} />
+          error: {
+            style: {
+              background: '#ef4444',
+            },
+          },
+        }} />
+        <div className="app flex flex-col min-h-screen">
+          {!isAdminPath && <Navbar />}
+          <main className="flex-1">
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/track-issue" element={<IssueTracker />} />
+              <Route path="/issue/:id" element={<IssueDetails />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/loginn" element={<Loginn />} />
 
-            {/* Protected Routes */}
-            <Route
-              path="/report-issue"
-              element={
-                <ProtectedRoute>
-                  <ReportIssue />
-                </ProtectedRoute>
-              }
-            />
+              {/* Protected Routes */}
+              <Route
+                path="/report-issue"
+                element={
+                  <ProtectedRoute>
+                    <ReportIssue />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-              path="/user"
-              element={
-                <ProtectedRoute>
-                  <UserPage />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/user"
+                element={
+                  <ProtectedRoute>
+                    <UserPage />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route path="/admin/:section" element={<AdminLogin />} />
-          </Routes>
-        </main>
-        {!isAdminPath && <Footer />}
-      </div>
-    </IssueProvider>
+              <Route path="/admin/:section" element={<AdminLogin />} />
+            </Routes>
+          </main>
+          {!isAdminPath && <Footer />}
+        </div>
+      </IssueProvider>
+    </AuthProvider>
   );
 }
 

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import axios from 'axios';
 import { Menu, X, User, LogOut, Home, FileText, Search, Info, Mail } from 'lucide-react';
+import { AuthContext } from '../../context/AuthContext';
 
 const Navbar = () => {
     const navLinks = [
@@ -17,48 +17,9 @@ const Navbar = () => {
     const location = useLocation();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [user, setUser] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const checkAuth = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                if (token) {
-                    const { data } = await axios.get('/api/user/me', {
-                        headers: { Authorization: `Bearer ${token}` },
-                        withCredentials: true
-                    });
-                    if (data?.success && data.user) {
-                        setIsLoggedIn(true);
-                        setUser(data.user);
-                        return;
-                    }
-                }
-                setIsLoggedIn(false);
-                setUser(null);
-            } catch (error) {
-                console.error('Auth check failed:', error);
-                localStorage.removeItem('token');
-                setIsLoggedIn(false);
-                setUser(null);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        checkAuth();
-
-        const handleStorageChange = (e) => {
-            if (e.key === 'token') {
-                checkAuth();
-            }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
+    const { user, loading: isLoading, logout } = useContext(AuthContext);
+    const isLoggedIn = !!user;
 
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -102,23 +63,8 @@ const Navbar = () => {
     };
 
     const handleLogout = async () => {
-        try {
-            await axios.post('/api/user/logout', {}, {
-                withCredentials: true,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-        } catch (error) {
-            console.error('Logout error:', error);
-        } finally {
-            localStorage.removeItem('token');
-            setIsLoggedIn(false);
-            setUser(null);
-            toast.success('Logged out successfully');
-            navigate('/', { replace: true });
-        }
+        await logout();
+        navigate('/', { replace: true });
         setIsMenuOpen(false);
     };
 
@@ -127,8 +73,8 @@ const Navbar = () => {
     return (
         <>
             <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled
-                    ? 'bg-white/95 backdrop-blur-md shadow-lg py-3'
-                    : 'bg-white/80 backdrop-blur-sm py-4'
+                ? 'bg-white/95 backdrop-blur-md shadow-lg py-3'
+                : 'bg-white/80 backdrop-blur-sm py-4'
                 }`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between">
@@ -154,8 +100,8 @@ const Navbar = () => {
                                         to={link.path}
                                         onClick={(e) => handleNavClick(e, link)}
                                         className={`flex items-center space-x-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${isActivePath(link.path)
-                                                ? 'bg-blue-50 text-blue-600'
-                                                : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
+                                            ? 'bg-blue-50 text-blue-600'
+                                            : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
                                             }`}
                                     >
                                         <Icon className="w-4 h-4" />
@@ -228,8 +174,8 @@ const Navbar = () => {
                                     to={link.path}
                                     onClick={(e) => handleNavClick(e, link)}
                                     className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${isActivePath(link.path)
-                                            ? 'bg-blue-50 text-blue-600'
-                                            : 'text-gray-700 hover:bg-gray-50'
+                                        ? 'bg-blue-50 text-blue-600'
+                                        : 'text-gray-700 hover:bg-gray-50'
                                         }`}
                                 >
                                     <Icon className="w-5 h-5" />

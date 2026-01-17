@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { Eye, EyeOff, Mail, Lock, User, LogIn, UserPlus, Loader2 } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext';
 
 const Loginn = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { login, user } = useContext(AuthContext);
+
   const [state, setState] = useState("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -16,36 +19,12 @@ const Loginn = () => {
 
   const from = location.state?.from || "/";
 
+  // Redirect if already logged in
   useEffect(() => {
-    let isMounted = true;
-
-    const checkAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      try {
-        const { data } = await axios.get('/api/user/me', {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true
-        });
-
-        if (isMounted && data?.success) {
-          navigate(from, { replace: true });
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        if (isMounted) {
-          localStorage.removeItem('token');
-        }
-      }
-    };
-
-    checkAuth();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [navigate, from]);
+    if (user) {
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, from]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -62,8 +41,8 @@ const Loginn = () => {
       );
 
       if (data.success) {
-        localStorage.setItem('token', data.token);
-        toast.success(data.message || 'Success!');
+        // Update context state
+        login(data.user, data.token);
         navigate(from, { replace: true });
       } else {
         throw new Error(data.message || 'Authentication failed');
