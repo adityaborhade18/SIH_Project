@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Select, 
-  MenuItem, 
-  FormControl, 
-  InputLabel, 
-  Avatar, 
-  Chip, 
-  Card, 
+import AdminIssueTable from '../../components/admin/AdminIssueTable';
+import AdminIssueDetailsDialog from '../../components/admin/AdminIssueDetailsDialog';
+import {
+  Box,
+  Typography,
+  Paper,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Avatar,
+  Chip,
+  Card,
   CardContent,
   Divider,
   IconButton,
@@ -34,12 +35,12 @@ import {
   ListItemIcon,
   ListItemText
 } from '@mui/material';
-import { 
-  CheckCircleOutline, 
-  PendingActions, 
-  Build, 
-  Warning, 
-  Refresh, 
+import {
+  CheckCircleOutline,
+  PendingActions,
+  Build,
+  Warning,
+  Refresh,
   FilterList,
   MoreVert,
   LocationOn,
@@ -210,22 +211,22 @@ const AdminDashboard = () => {
       if (filters.searchQuery && !`${issue.title} ${issue.description} ${issue.location} ${issue.category}`.toLowerCase().includes(filters.searchQuery.toLowerCase())) {
         return false;
       }
-      
+
       // Apply status filter
       if (filters.status.length > 0 && !filters.status.includes(issue.status)) {
         return false;
       }
-      
+
       // Apply priority filter
       if (filters.priority.length > 0 && !filters.priority.includes(issue.priority)) {
         return false;
       }
-      
+
       // Apply department filter
       if (filters.department.length > 0 && (!issue.department || !filters.department.includes(issue.department))) {
         return false;
       }
-      
+
       // Apply date range filter
       if (filters.dateRange[0] && new Date(issue.date) < filters.dateRange[0]) {
         return false;
@@ -233,7 +234,7 @@ const AdminDashboard = () => {
       if (filters.dateRange[1] && new Date(issue.date) > filters.dateRange[1]) {
         return false;
       }
-      
+
       return true;
     }).sort((a, b) => {
       // Apply sorting
@@ -259,12 +260,12 @@ const AdminDashboard = () => {
   // Handle bulk actions
   const handleBulkAction = () => {
     if (!bulkAction || selectedIssues.length === 0) return;
-    
+
     // In a real app, you would make an API call here
     selectedIssues.forEach(id => {
       updateIssueStatus(id, bulkAction);
     });
-    
+
     setShowBulkDialog(false);
     setSelectedIssues([]);
     showSnackbar(`Updated status for ${selectedIssues.length} issues`, 'success');
@@ -318,22 +319,22 @@ const AdminDashboard = () => {
 
   // Columns configuration
   const columns = [
-    { 
-      field: 'id', 
-      headerName: 'ID', 
+    {
+      field: 'id',
+      headerName: 'ID',
       width: 80,
-      renderCell: (params) => `#${params.value}` 
+      renderCell: (params) => `#${params.value}`
     },
-    { 
-      field: 'date', 
-      headerName: 'Date', 
+    {
+      field: 'date',
+      headerName: 'Date',
       width: 120,
       renderCell: (params) => new Date(params.value).toLocaleDateString()
     },
-    { 
-      field: 'title', 
-      headerName: 'Title', 
-      flex: 1, 
+    {
+      field: 'title',
+      headerName: 'Title',
+      flex: 1,
       minWidth: 200,
       renderCell: (params) => (
         <Box>
@@ -347,9 +348,9 @@ const AdminDashboard = () => {
         </Box>
       )
     },
-    { 
-      field: 'priority', 
-      headerName: 'Priority', 
+    {
+      field: 'priority',
+      headerName: 'Priority',
       width: 120,
       renderCell: (params) => (
         <Chip
@@ -367,9 +368,9 @@ const AdminDashboard = () => {
         />
       )
     },
-    { 
-      field: 'location', 
-      headerName: 'Location', 
+    {
+      field: 'location',
+      headerName: 'Location',
       width: 180,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -462,32 +463,32 @@ const AdminDashboard = () => {
 
   // Stats cards
   const stats = [
-    { 
-      title: 'Total Reports', 
+    {
+      title: 'Total Reports',
       value: issues.length,
       icon: Warning,
       color: theme.palette.primary.main,
       trend: '+12%',
       trendColor: 'success.main'
     },
-    { 
-      title: 'Pending', 
+    {
+      title: 'Pending',
       value: issues.filter(issue => issue.status === 'Pending').length,
       icon: PendingActions,
       color: '#ff9800',
       trend: '+5%',
       trendColor: 'error.main'
     },
-    { 
-      title: 'In Progress', 
+    {
+      title: 'In Progress',
       value: issues.filter(issue => issue.status === 'In Process').length,
       icon: Build,
       color: '#2196f3',
       trend: '+8%',
       trendColor: 'success.main'
     },
-    { 
-      title: 'Resolved', 
+    {
+      title: 'Resolved',
       value: issues.filter(issue => issue.status === 'Solved').length,
       icon: CheckCircleOutline,
       color: '#4caf50',
@@ -505,7 +506,7 @@ const AdminDashboard = () => {
       color: "#795548"
     },
     'public-health': {
-      title: "Public Health Department", 
+      title: "Public Health Department",
       description: "Health services, disease control, public health initiatives",
       icon: LocalHospital,
       color: "#e91e63"
@@ -543,15 +544,15 @@ const AdminDashboard = () => {
           </Typography>
         </Box>
         <Box display="flex" gap={1}>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             startIcon={<Refresh />}
             onClick={() => window.location.reload()}
           >
             Refresh
           </Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             color="primary"
             startIcon={<FilterList />}
             onClick={() => setAnchorEl(document.getElementById('filter-button'))}
@@ -590,7 +591,7 @@ const AdminDashboard = () => {
                   ))}
                 </Select>
               </FormControl>
-              
+
               <FormControl fullWidth size="small" sx={{ mb: 2 }}>
                 <InputLabel>Priority</InputLabel>
                 <Select
@@ -607,7 +608,7 @@ const AdminDashboard = () => {
                   ))}
                 </Select>
               </FormControl>
-              
+
               <FormControl fullWidth size="small" sx={{ mb: 2 }}>
                 <InputLabel>Department</InputLabel>
                 <Select
@@ -624,7 +625,7 @@ const AdminDashboard = () => {
                   ))}
                 </Select>
               </FormControl>
-              
+
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker
                   label="From Date"
@@ -639,10 +640,10 @@ const AdminDashboard = () => {
                   renderInput={(params) => <TextField {...params} size="small" fullWidth />}
                 />
               </LocalizationProvider>
-              
+
               <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                <Button 
-                  size="small" 
+                <Button
+                  size="small"
                   onClick={() => setFilters({
                     status: [],
                     priority: [],
@@ -653,9 +654,9 @@ const AdminDashboard = () => {
                 >
                   Reset
                 </Button>
-                <Button 
-                  variant="contained" 
-                  size="small" 
+                <Button
+                  variant="contained"
+                  size="small"
                   onClick={() => setAnchorEl(null)}
                   sx={{ ml: 1 }}
                 >
@@ -680,7 +681,7 @@ const AdminDashboard = () => {
             sx: { width: 300 }
           }}
         />
-        
+
         <Box>
           {selectedIssues.length > 0 && (
             <>
@@ -714,46 +715,46 @@ const AdminDashboard = () => {
 
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs 
-          value={activeTab} 
+        <Tabs
+          value={activeTab}
           onChange={(e, newValue) => setActiveTab(newValue)}
           aria-label="municipal department tabs"
         >
-          <Tab 
-            icon={<CleaningServices fontSize="small" />} 
+          <Tab
+            icon={<CleaningServices fontSize="small" />}
             iconPosition="start"
-            label="Sanitation" 
-            value="sanitation" 
+            label="Sanitation"
+            value="sanitation"
           />
-          <Tab 
+          <Tab
             icon={<LocalHospital fontSize="small" />}
             iconPosition="start"
-            label="Public Health" 
-            value="public-health" 
+            label="Public Health"
+            value="public-health"
           />
-          <Tab 
+          <Tab
             icon={<DirectionsCar fontSize="small" />}
             iconPosition="start"
-            label="Roads & Transport" 
-            value="roads-transport" 
+            label="Roads & Transport"
+            value="roads-transport"
           />
-          <Tab 
+          <Tab
             icon={<WaterDrop fontSize="small" />}
             iconPosition="start"
-            label="Water Supply" 
-            value="water-supply" 
+            label="Water Supply"
+            value="water-supply"
           />
-          <Tab 
+          <Tab
             icon={<Lightbulb fontSize="small" />}
             iconPosition="start"
-            label="Electricity" 
-            value="electricity" 
+            label="Electricity"
+            value="electricity"
           />
-          <Tab 
+          <Tab
             icon={<MapIcon fontSize="small" />}
             iconPosition="start"
-            label="Map View" 
-            value="map" 
+            label="Map View"
+            value="map"
           />
         </Tabs>
       </Box>
@@ -766,7 +767,7 @@ const AdminDashboard = () => {
             <Box sx={{ mb: 4, p: 3, bgcolor: departmentContent[deptKey].color + '10', borderRadius: 2 }}>
               <Box display="flex" alignItems="center" mb={2}>
                 <Avatar sx={{ bgcolor: departmentContent[deptKey].color, mr: 2 }}>
-                 {React.createElement(departmentContent[deptKey].icon)}
+                  {React.createElement(departmentContent[deptKey].icon)}
                 </Avatar>
                 <Box>
                   <Typography variant="h5" fontWeight="bold">
@@ -777,16 +778,16 @@ const AdminDashboard = () => {
                   </Typography>
                 </Box>
               </Box>
-              
+
               {/* Department-specific stats */}
-              <Box sx={{ 
-                display: 'grid', 
-                gap: 2, 
-                gridTemplateColumns: { 
-                  xs: '1fr', 
-                  sm: 'repeat(2, 1fr)', 
-                  md: 'repeat(4, 1fr)' 
-                } 
+              <Box sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, 1fr)',
+                  md: 'repeat(4, 1fr)'
+                }
               }}>
                 <Card variant="outlined">
                   <CardContent>
@@ -832,23 +833,23 @@ const AdminDashboard = () => {
             </Box>
 
             {/* Department-specific charts and table */}
-            <Box sx={{ 
-              display: 'grid', 
-              gap: 3, 
-              gridTemplateColumns: { 
-                xs: '1fr', 
-                lg: '1fr 1fr' 
-              }, 
-              mb: 4 
+            <Box sx={{
+              display: 'grid',
+              gap: 3,
+              gridTemplateColumns: {
+                xs: '1fr',
+                lg: '1fr 1fr'
+              },
+              mb: 4
             }}>
               <Paper sx={{ p: 2, height: 300 }}>
                 <Typography variant="h6" gutterBottom>Issues by Status</Typography>
                 <ResponsiveContainer width="100%" height="90%">
                   <PieChart>
                     <Pie
-                      data={statusData.filter(data => 
-                        issues.some(issue => 
-                          issue.department === departments.find(d => d.toLowerCase().includes(deptKey)) && 
+                      data={statusData.filter(data =>
+                        issues.some(issue =>
+                          issue.department === departments.find(d => d.toLowerCase().includes(deptKey)) &&
                           issue.status === data.name
                         )
                       )}
@@ -892,55 +893,34 @@ const AdminDashboard = () => {
             </Box>
 
             {/* Department Issues Table */}
-            <Paper elevation={0} variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" component="h2">
-                  Recent {departmentContent[deptKey].title} Issues
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Total: {issues.filter(issue => issue.department === departments.find(d => d.toLowerCase().includes(deptKey))).length} issues
-                </Typography>
-              </Box>
-              
-              <div style={{ height: 400, width: '100%' }}>
-                <DataGrid
-                  rows={filteredIssues.filter(issue => issue.department === departments.find(d => d.toLowerCase().includes(deptKey)))}
-                  columns={columns}
-                  pageSize={5}
-                  rowsPerPageOptions={[5, 10, 15]}
-                  checkboxSelection
-                  disableSelectionOnClick
-                  onSelectionModelChange={handleRowSelection}
-                  selectionModel={selectedIssues}
-                  getRowHeight={() => 'auto'}
-                  onSortModelChange={(model) => setSortModel(model)}
-                  sortModel={sortModel}
-                  sx={{
-                    border: 'none',
-                    '& .MuiDataGrid-cell': {
-                      padding: '12px 16px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
-                    },
-                    '& .MuiDataGrid-columnHeaders': {
-                      backgroundColor: theme.palette.mode === 'light' ? '#f8f9fa' : '#1e1e1e',
-                      borderRadius: '8px 8px 0 0',
-                      borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
-                    },
-                    '& .MuiDataGrid-columnHeaderTitle': {
-                      fontWeight: 600,
-                    },
-                    '& .MuiDataGrid-row:hover': {
-                      backgroundColor: theme.palette.action.hover,
-                    },
-                  }}
-                />
-              </div>
-            </Paper>
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Recent {departmentContent[deptKey].title} Issues
+              </Typography>
+              <AdminIssueTable
+                issues={filteredIssues.filter(issue => issue.department === departments.find(d => d.toLowerCase().includes(deptKey)))}
+                onViewDetails={(issue) => {
+                  setSelectedIssue(issue);
+                  setShowIssueDetails(true);
+                }}
+              />
+            </Box>
           </Box>
         )
       ))}
+
+      <AdminIssueDetailsDialog
+        open={showIssueDetails}
+        onClose={() => setShowIssueDetails(false)}
+        issue={selectedIssue}
+        onStatusUpdate={(id, newStatus) => {
+          handleStatusChange(id, newStatus);
+          // Update local state if needed (issues list)
+          if (selectedIssue && selectedIssue.id === id) {
+            setSelectedIssue({ ...selectedIssue, status: newStatus });
+          }
+        }}
+      />
 
       {/* Map View Tab */}
       {activeTab === 'map' && (
@@ -981,7 +961,7 @@ const AdminDashboard = () => {
           <Typography variant="body1" paragraph>
             You have selected {selectedIssues.length} issues. What would you like to do with them?
           </Typography>
-          
+
           <FormControl fullWidth variant="outlined" size="small" sx={{ mb: 2 }}>
             <InputLabel>Action</InputLabel>
             <Select
@@ -998,7 +978,7 @@ const AdminDashboard = () => {
               <MenuItem value="Rejected">Reject Selected</MenuItem>
             </Select>
           </FormControl>
-          
+
           {bulkAction === 'Assigned' && (
             <FormControl fullWidth variant="outlined" size="small">
               <InputLabel>Department</InputLabel>
@@ -1016,9 +996,9 @@ const AdminDashboard = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowBulkDialog(false)}>Cancel</Button>
-          <Button 
-            onClick={handleBulkAction} 
-            variant="contained" 
+          <Button
+            onClick={handleBulkAction}
+            variant="contained"
             color="primary"
             disabled={!bulkAction || (bulkAction === 'Assigned' && !filters.department.length)}
           >
@@ -1028,188 +1008,13 @@ const AdminDashboard = () => {
       </Dialog>
 
       {/* Issue Details Dialog */}
-      <Dialog 
-        open={showIssueDetails} 
-        onClose={() => setShowIssueDetails(false)} 
-        maxWidth="md" 
-        fullWidth
-      >
-        {selectedIssue && (
-          <>
-            <DialogTitle>Issue Details</DialogTitle>
-            <DialogContent>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={8}>
-                  <Typography variant="h6" gutterBottom>{selectedIssue.title}</Typography>
-                  <Typography variant="body1" paragraph>{selectedIssue.description}</Typography>
-                  
-                  <Box sx={{ mb: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-                    <Typography variant="subtitle2" gutterBottom>Location</Typography>
-                    <Typography>{selectedIssue.location?.address || 'Location not specified'}</Typography>
-                    
-                    <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                      <Chip 
-                        label={selectedIssue.status} 
-                        size="small" 
-                        sx={{ 
-                          backgroundColor: statusColors[selectedIssue.status] + '1a',
-                          color: statusColors[selectedIssue.status],
-                          fontWeight: 500,
-                          minWidth: '80px',
-                          '& .MuiChip-label': {
-                            px: 1,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: 'block',
-                          },
-                        }} 
-                      />
-                      <Chip 
-                        label={selectedIssue.priority || 'Medium'} 
-                        size="small" 
-                        variant="outlined"
-                        sx={{ 
-                          borderColor: priorityColors[selectedIssue.priority || 'Medium'], 
-                          color: priorityColors[selectedIssue.priority || 'Medium'] 
-                        }} 
-                      />
-                      {selectedIssue.department && (
-                        <Chip 
-                          label={selectedIssue.department} 
-                          size="small" 
-                          variant="outlined"
-                          color="primary"
-                        />
-                      )}
-                    </Box>
-                  </Box>
-                  
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" gutterBottom>Attachments</Typography>
-                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                      {selectedIssue.images?.length > 0 ? (
-                        selectedIssue.images.map((img, idx) => (
-                          <Box 
-                            key={idx} 
-                            sx={{ 
-                              width: 100, 
-                              height: 100, 
-                              borderRadius: 1, 
-                              overflow: 'hidden',
-                              border: '1px solid',
-                              borderColor: 'divider'
-                            }}
-                          >
-                            <img 
-                              src={img} 
-                              alt={`Attachment ${idx + 1}`} 
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                            />
-                          </Box>
-                        ))
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">No attachments</Typography>
-                      )}
-                    </Box>
-                  </Box>
-                  
-                  <Box>
-                    <Typography variant="subtitle2" gutterBottom>Update Status</Typography>
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                      {statusOptions.map((status) => (
-                        <Button
-                          key={status}
-                          variant={selectedIssue.status === status ? 'contained' : 'outlined'}
-                          size="small"
-                          onClick={() => {
-                            handleStatusChange(selectedIssue.id, status);
-                            setSelectedIssue({ ...selectedIssue, status });
-                          }}
-                          sx={{ 
-                            textTransform: 'none',
-                            ...(selectedIssue.status === status && {
-                              bgcolor: statusColors[status],
-                              '&:hover': { bgcolor: statusColors[status] }
-                            })
-                          }}
-                        >
-                          {status}
-                        </Button>
-                      ))}
-                    </Box>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Card variant="outlined" sx={{ mb: 2 }}>
-                    <CardContent>
-                      <Typography variant="subtitle2" gutterBottom>Details</Typography>
-                      <Box sx={{ '& > div': { mb: 1 } }}>
-                        <div><strong>Reported:</strong> {new Date(selectedIssue.date).toLocaleDateString()}</div>
-                        <div><strong>Category:</strong> {selectedIssue.category || 'N/A'}</div>
-                        <div><strong>Department:</strong> {selectedIssue.department || 'Unassigned'}</div>
-                        <div><strong>Priority:</strong> {selectedIssue.priority || 'Medium'}</div>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography variant="subtitle2" gutterBottom>Reporter</Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Avatar sx={{ width: 40, height: 40, mr: 1.5 }}>
-                          {selectedIssue.reporter?.name?.[0] || 'U'}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body2" fontWeight={500}>
-                            {selectedIssue.reporter?.name || 'Anonymous User'}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {selectedIssue.reporter?.email || 'No contact information'}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Button 
-                        fullWidth 
-                        variant="outlined" 
-                        size="small" 
-                        startIcon={<Email />}
-                        onClick={() => {
-                          setShowMessageDialog(true);
-                          setMessageType('email');
-                          setShowIssueDetails(false);
-                        }}
-                      >
-                        Send Message
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setShowIssueDetails(false)}>Close</Button>
-              <Button 
-                variant="contained" 
-                color="primary"
-                onClick={() => {
-                  setShowIssueDetails(false);
-                  setSelectedIssues([selectedIssue.id]);
-                  setShowBulkDialog(true);
-                }}
-              >
-                Take Action
-              </Button>
-            </DialogActions>
-          </>
-        )}
-      </Dialog>
+
 
       {/* Message Dialog */}
-      <Dialog 
-        open={showMessageDialog} 
-        onClose={() => setShowMessageDialog(false)} 
-        maxWidth="sm" 
+      <Dialog
+        open={showMessageDialog}
+        onClose={() => setShowMessageDialog(false)}
+        maxWidth="sm"
         fullWidth
       >
         <DialogTitle>
@@ -1236,14 +1041,14 @@ const AdminDashboard = () => {
                 <MenuItem value="department">By Department</MenuItem>
               </Select>
             </FormControl>
-            
+
             <TextField
               label="Subject"
               fullWidth
               margin="normal"
               variant="outlined"
             />
-            
+
             <TextField
               label="Message"
               fullWidth
@@ -1255,7 +1060,7 @@ const AdminDashboard = () => {
               onChange={(e) => setMessage(e.target.value)}
               placeholder={`Type your ${messageType === 'email' ? 'email' : 'notification'} message here...`}
             />
-            
+
             <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
               <AttachFile fontSize="small" color="action" />
               <Typography variant="body2" color="text.secondary">
@@ -1266,14 +1071,14 @@ const AdminDashboard = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowMessageDialog(false)}>Cancel</Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             color="primary"
             onClick={() => {
               setShowMessageDialog(false);
               showSnackbar(
-                messageType === 'email' 
-                  ? 'Email sent successfully' 
+                messageType === 'email'
+                  ? 'Email sent successfully'
                   : 'Notification sent successfully',
                 'success'
               );
@@ -1285,14 +1090,14 @@ const AdminDashboard = () => {
       </Dialog>
 
       {/* Snackbar for notifications */}
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
           sx={{ width: '100%' }}
         >

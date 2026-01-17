@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-import { DataGrid, GridActionsCellItem } from '@mui/x-data-grid';
+import AdminIssueTable from '../../components/admin/AdminIssueTable';
+import AdminIssueDetailsDialog from '../../components/admin/AdminIssueDetailsDialog';
+
 import {
   Box,
   Typography,
@@ -339,7 +341,6 @@ const SanitationDashboard = ({ onLogout }) => {
     dateRange: [null, null],
     searchQuery: ''
   });
-  const [sortModel, setSortModel] = useState([{ field: 'date', sort: 'desc' }]);
   const [bulkAction, setBulkAction] = useState('');
   const [showBulkDialog, setShowBulkDialog] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -353,46 +354,7 @@ const SanitationDashboard = ({ onLogout }) => {
 
 
   // Filter and sort issues
-  const filteredIssues = React.useMemo(() => {
-    return sanitationIssues.filter(issue => {
-      // Apply search query
-      if (filters.searchQuery && !`${issue.title} ${issue.description} ${issue.location} ${issue.category}`.toLowerCase().includes(filters.searchQuery.toLowerCase())) {
-        return false;
-      }
 
-      // Apply status filter
-      if (filters.status.length > 0 && !filters.status.includes(issue.status)) {
-        return false;
-      }
-
-      // Apply priority filter
-      if (filters.priority.length > 0 && !filters.priority.includes(issue.priority)) {
-        return false;
-      }
-
-      // Apply date range filter
-      if (filters.dateRange[0] && new Date(issue.date) < filters.dateRange[0]) {
-        return false;
-      }
-      if (filters.dateRange[1] && new Date(issue.date) > filters.dateRange[1]) {
-        return false;
-      }
-
-      return true;
-    }).sort((a, b) => {
-      // Apply sorting
-      for (let sort of sortModel) {
-        const { field, sort: sortOrder } = sort;
-        if (a[field] < b[field]) {
-          return sortOrder === 'asc' ? -1 : 1;
-        }
-        if (a[field] > b[field]) {
-          return sortOrder === 'asc' ? 1 : -1;
-        }
-      }
-      return 0;
-    });
-  }, [sanitationIssues, filters, sortModel]);
 
   // Handle status change for single issue
   const handleStatusChange = (id, newStatus) => {
@@ -453,129 +415,7 @@ const SanitationDashboard = ({ onLogout }) => {
   ], [sanitationIssues]);
 
   // Columns configuration
-  const columns = [
-    {
-      field: 'id',
-      headerName: 'ID',
-      width: 80,
-      renderCell: (params) => `#${params.value}`
-    },
-    {
-      field: 'date',
-      headerName: 'Date',
-      width: 120,
-      renderCell: (params) => new Date(params.value).toLocaleDateString()
-    },
-    {
-      field: 'title',
-      headerName: 'Title',
-      flex: 1,
-      minWidth: 200,
-      renderCell: (params) => (
-        <Box>
-          <Typography variant="body2" fontWeight="500">{params.value}</Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5 }}>
-            <Category fontSize="small" color="action" sx={{ fontSize: 14, mr: 0.5 }} />
-            <Typography variant="caption" color="text.secondary">
-              {params.row.category}
-            </Typography>
-          </Box>
-        </Box>
-      )
-    },
-    {
-      field: 'priority',
-      headerName: 'Priority',
-      width: 120,
-      renderCell: (params) => (
-        <Chip
-          label={params.value || 'Medium'}
-          size="small"
-          sx={{
-            backgroundColor: priorityColors[params.value || 'Medium'] + '20',
-            color: priorityColors[params.value || 'Medium'],
-            fontWeight: 500,
-            width: '100%',
-            '& .MuiChip-label': {
-              px: 1,
-            },
-          }}
-        />
-      )
-    },
-    {
-      field: 'location',
-      headerName: 'Location',
-      width: 180,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <LocationOn color="action" fontSize="small" sx={{ mr: 0.5 }} />
-          <Typography variant="body2" noWrap>
-            {params.value?.address?.split(',').slice(0, 2).join(',') || 'N/A'}
-          </Typography>
-        </Box>
-      )
-    },
-    {
-      field: 'status',
-      headerName: 'Status',
-      width: 160,
-      renderCell: (params) => (
-        <Chip
-          label={params.value}
-          size="small"
-          sx={{
-            backgroundColor: statusColors[params.value] + '1a',
-            color: statusColors[params.value],
-            fontWeight: 500,
-            minWidth: '80px',
-            maxWidth: '140px',
-            '& .MuiChip-label': {
-              px: 1,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              display: 'block',
-            },
-          }}
-        />
-      ),
-    },
-    {
-      field: 'actions',
-      type: 'actions',
-      headerName: 'Actions',
-      width: 120,
-      getActions: (params) => [
-        <Tooltip title="View Details" key="view">
-          <IconButton onClick={() => {
-            setSelectedIssue(params.row);
-            setShowIssueDetails(true);
-          }}>
-            <Visibility fontSize="small" />
-          </IconButton>
-        </Tooltip>,
-        <Tooltip title="Change Status" key="status">
-          <FormControl variant="standard" size="small" sx={{ minWidth: 120 }}>
-            <Select
-              value={params.row.status}
-              onChange={(e) => handleStatusChange(params.id, e.target.value)}
-              sx={{
-                '&:before, &:after': { border: 'none !important' },
-                '& .MuiSelect-select': { py: 0.5, px: 1, fontSize: '0.8125rem' }
-              }}
-            >
-              {statusOptions.map((status) => (
-                <MenuItem key={status} value={status}>
-                  {status}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Tooltip>,
-      ],
-    },
-  ];
+
 
   // Render the component
   return (
@@ -845,68 +685,66 @@ const SanitationDashboard = ({ onLogout }) => {
       {activeTab === 'overview' && (
         <>
 
+          {/* New Admin Issue Table */}
+          <Box sx={{ mt: 4 }}>
+            <Typography variant="h6" gutterBottom>Recent Sanitation Reports</Typography>
+            <AdminIssueTable
+              issues={sanitationIssues}
+              onViewDetails={(issue) => {
+                setSelectedIssue(issue);
+                setShowIssueDetails(true);
+              }}
+            />
+          </Box>
 
+          {/* New Admin Issue Details Dialog */}
+          <AdminIssueDetailsDialog
+            open={showIssueDetails}
+            onClose={() => setShowIssueDetails(false)}
+            issue={selectedIssue}
+            onStatusUpdate={(id, newStatus) => {
+              handleStatusChange(id, newStatus);
+              setSelectedIssue({ ...selectedIssue, status: newStatus });
+            }}
+          />
 
-          {/* Recent Reports Table */}
-          <Paper elevation={0} variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" component="h2">
-                Recent Sanitation Reports
+          {/* Bulk Action Dialog */}
+          <Dialog open={showBulkDialog} onClose={() => setShowBulkDialog(false)} maxWidth="sm" fullWidth>
+            <DialogTitle>Bulk Actions</DialogTitle>
+            <DialogContent>
+              <Typography variant="body1" paragraph>
+                You have selected {selectedIssues.length} sanitation issues. What would you like to do with them?
               </Typography>
-              <Box>
-                <Typography variant="body2" color="text.secondary" display="inline" mr={2}>
-                  Total: {filteredIssues.length} issues
-                </Typography>
-                <Button
-                  size="small"
-                  startIcon={<Notifications />}
-                  onClick={() => {
-                    setShowMessageDialog(true);
-                    setMessageType('notification');
-                  }}
+
+              <FormControl fullWidth variant="outlined" size="small" sx={{ mb: 2 }}>
+                <InputLabel>Action</InputLabel>
+                <Select
+                  value={bulkAction}
+                  onChange={(e) => setBulkAction(e.target.value)}
+                  label="Action"
                 >
-                  Notify Team
-                </Button>
-              </Box>
-            </Box>
-
-            <div style={{ height: 500, width: '100%' }}>
-              <DataGrid
-                rows={filteredIssues}
-                columns={columns}
-                pageSize={7}
-                rowsPerPageOptions={[7, 15, 25]}
-                checkboxSelection
-                disableSelectionOnClick
-                onSelectionModelChange={handleRowSelection}
-                selectionModel={selectedIssues}
-                getRowHeight={() => 'auto'}
-                onSortModelChange={(model) => setSortModel(model)}
-                sortModel={sortModel}
-                sx={{
-                  border: 'none',
-                  '& .MuiDataGrid-cell': {
-                    padding: '12px 16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
-                  },
-                  '& .MuiDataGrid-columnHeaders': {
-                    backgroundColor: theme.palette.mode === 'light' ? '#f8f9fa' : '#1e1e1e',
-                    borderRadius: '8px 8px 0 0',
-                    borderBottom: '1px solid rgba(224, 224, 224, 0.5)',
-                  },
-                  '& .MuiDataGrid-columnHeaderTitle': {
-                    fontWeight: 600,
-                  },
-                  '& .MuiDataGrid-row:hover': {
-                    backgroundColor: theme.palette.action.hover,
-                  },
-                }}
-              />
-            </div>
-          </Paper>
-
+                  <MenuItem value="">
+                    <em>Select an action</em>
+                  </MenuItem>
+                  <MenuItem value="In Process">Mark as In Process</MenuItem>
+                  <MenuItem value="Assigned">Assign to Team</MenuItem>
+                  <MenuItem value="Solved">Mark as Solved</MenuItem>
+                  <MenuItem value="Rejected">Reject Selected</MenuItem>
+                </Select>
+              </FormControl>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setShowBulkDialog(false)}>Cancel</Button>
+              <Button
+                onClick={handleBulkAction}
+                variant="contained"
+                color="primary"
+                disabled={!bulkAction}
+              >
+                Apply to {selectedIssues.length} Issues
+              </Button>
+            </DialogActions>
+          </Dialog>
 
           {/* Charts Row */}
           <Box sx={{
@@ -1154,176 +992,6 @@ const SanitationDashboard = ({ onLogout }) => {
             Apply to {selectedIssues.length} Issues
           </Button>
         </DialogActions>
-      </Dialog>
-
-      {/* Issue Details Dialog */}
-      <Dialog
-        open={showIssueDetails}
-        onClose={() => setShowIssueDetails(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        {selectedIssue && (
-          <>
-            <DialogTitle>Sanitation Issue Details</DialogTitle>
-            <DialogContent>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={8}>
-                  <Typography variant="h6" gutterBottom>{selectedIssue.title}</Typography>
-                  <Typography variant="body1" paragraph>{selectedIssue.description}</Typography>
-
-                  <Box sx={{ mb: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-                    <Typography variant="subtitle2" gutterBottom>Location</Typography>
-                    <Typography>{selectedIssue.location?.address || 'Location not specified'}</Typography>
-
-                    <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                      <Chip
-                        label={selectedIssue.status}
-                        size="small"
-                        sx={{
-                          backgroundColor: statusColors[selectedIssue.status] + '1a',
-                          color: statusColors[selectedIssue.status],
-                          fontWeight: 500,
-                          minWidth: '80px',
-                          '& .MuiChip-label': {
-                            px: 1,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: 'block',
-                          },
-                        }}
-                      />
-                      <Chip
-                        label={selectedIssue.priority || 'Medium'}
-                        size="small"
-                        variant="outlined"
-                        sx={{
-                          borderColor: priorityColors[selectedIssue.priority || 'Medium'],
-                          color: priorityColors[selectedIssue.priority || 'Medium']
-                        }}
-                      />
-                    </Box>
-                  </Box>
-
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" gutterBottom>Attachments</Typography>
-                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                      {selectedIssue.images?.length > 0 ? (
-                        selectedIssue.images.map((img, idx) => (
-                          <Box
-                            key={idx}
-                            sx={{
-                              width: 100,
-                              height: 100,
-                              borderRadius: 1,
-                              overflow: 'hidden',
-                              border: '1px solid',
-                              borderColor: 'divider'
-                            }}
-                          >
-                            <img
-                              src={img}
-                              alt={`Attachment ${idx + 1}`}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                          </Box>
-                        ))
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">No attachments</Typography>
-                      )}
-                    </Box>
-                  </Box>
-
-                  <Box>
-                    <Typography variant="subtitle2" gutterBottom>Update Status</Typography>
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                      {statusOptions.map((status) => (
-                        <Button
-                          key={status}
-                          variant={selectedIssue.status === status ? 'contained' : 'outlined'}
-                          size="small"
-                          onClick={() => {
-                            handleStatusChange(selectedIssue.id, status);
-                            setSelectedIssue({ ...selectedIssue, status });
-                          }}
-                          sx={{
-                            textTransform: 'none',
-                            ...(selectedIssue.status === status && {
-                              bgcolor: statusColors[status],
-                              '&:hover': { bgcolor: statusColors[status] }
-                            })
-                          }}
-                        >
-                          {status}
-                        </Button>
-                      ))}
-                    </Box>
-                  </Box>
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Card variant="outlined" sx={{ mb: 2 }}>
-                    <CardContent>
-                      <Typography variant="subtitle2" gutterBottom>Details</Typography>
-                      <Box sx={{ '& > div': { mb: 1 } }}>
-                        <div><strong>Reported:</strong> {new Date(selectedIssue.date).toLocaleDateString()}</div>
-                        <div><strong>Category:</strong> {selectedIssue.category || 'N/A'}</div>
-                        <div><strong>Department:</strong> Sanitation</div>
-                        <div><strong>Priority:</strong> {selectedIssue.priority || 'Medium'}</div>
-                      </Box>
-                    </CardContent>
-                  </Card>
-
-                  <Card variant="outlined">
-                    <CardContent>
-                      <Typography variant="subtitle2" gutterBottom>Reporter</Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Avatar sx={{ width: 40, height: 40, mr: 1.5 }}>
-                          {selectedIssue.reporter?.name?.[0] || 'U'}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="body2" fontWeight={500}>
-                            {selectedIssue.reporter?.name || 'Anonymous User'}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {selectedIssue.reporter?.email || 'No contact information'}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Button
-                        fullWidth
-                        variant="outlined"
-                        size="small"
-                        startIcon={<Email />}
-                        onClick={() => {
-                          setShowMessageDialog(true);
-                          setMessageType('email');
-                          setShowIssueDetails(false);
-                        }}
-                      >
-                        Send Message
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setShowIssueDetails(false)}>Close</Button>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => {
-                  setShowIssueDetails(false);
-                  setSelectedIssues([selectedIssue.id]);
-                  setShowBulkDialog(true);
-                }}
-              >
-                Take Action
-              </Button>
-            </DialogActions>
-          </>
-        )}
       </Dialog>
 
       {/* Message Dialog */}

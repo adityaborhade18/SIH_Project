@@ -61,6 +61,9 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+import AdminIssueTable from '../../components/admin/AdminIssueTable';
+import AdminIssueDetailsDialog from '../../components/admin/AdminIssueDetailsDialog';
+
 const statusOptions = ['Pending', 'In Process', 'Assigned', 'Solved', 'Rejected'];
 const priorityLevels = ['Low', 'Medium', 'High', 'Critical'];
 
@@ -550,6 +553,7 @@ const RoadsTransportDashboard = ({ onLogout }) => {
       </Tabs>
 
       {/* Main Content */}
+      {/* Main Content */}
       {activeTab === 'overview' && (
         <>
           {/* Charts */}
@@ -574,7 +578,6 @@ const RoadsTransportDashboard = ({ onLogout }) => {
                 </PieChart>
               </ResponsiveContainer>
             </Paper>
-
             <Paper sx={{ p: 2 }}>
               <Typography variant="h6" gutterBottom>Issue Categories</Typography>
               <ResponsiveContainer width="100%" height={300}>
@@ -589,27 +592,17 @@ const RoadsTransportDashboard = ({ onLogout }) => {
             </Paper>
           </Box>
 
-          {/* Issues Table */}
-          <Paper sx={{ p: 2 }}>
+          {/* New Custom Table */}
+          <Box sx={{ mt: 4 }}>
             <Typography variant="h6" gutterBottom>Recent Road & Transport Reports</Typography>
-            <DataGrid
-              rows={filteredIssues}
-              columns={columns}
-              pageSize={5}
-              rowsPerPageOptions={[5]}
-              checkboxSelection
-              onSelectionModelChange={handleRowSelection}
-              selectionModel={selectedIssues}
-              onRowClick={(params) => {
-                setSelectedIssue(params.row);
+            <AdminIssueTable
+              issues={roadsIssues}
+              onViewDetails={(issue) => {
+                setSelectedIssue(issue);
                 setShowIssueDetails(true);
               }}
-              sx={{
-                border: 'none',
-                '& .MuiDataGrid-row:hover': { cursor: 'pointer' }
-              }}
             />
-          </Paper>
+          </Box>
         </>
       )}
 
@@ -642,6 +635,7 @@ const RoadsTransportDashboard = ({ onLogout }) => {
 
       {activeTab === 'analytics' && (
         <Paper sx={{ p: 3 }}>
+          {/* Analytics Content Kept Same */}
           <Typography variant="h6" gutterBottom>Roads Department Analytics</Typography>
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
@@ -657,7 +651,7 @@ const RoadsTransportDashboard = ({ onLogout }) => {
                   ]}
                 >
                   <XAxis dataKey="month" />
-                  <YAxis label="Hours" />
+                  <YAxis label={{ value: 'Hours', angle: -90, position: 'insideLeft' }} />
                   <RechartsTooltip formatter={(value) => [`${value} hours`, 'Average Repair Time']} />
                   <Bar dataKey="time" fill="#ff5722" />
                 </BarChart>
@@ -859,93 +853,16 @@ const RoadsTransportDashboard = ({ onLogout }) => {
         </DialogActions>
       </Dialog>
 
-      {/* Issue Details Dialog */}
-      <Dialog open={showIssueDetails} onClose={() => setShowIssueDetails(false)} maxWidth="sm" fullWidth>
-        {selectedIssue && (
-          <>
-            <DialogTitle>{selectedIssue.title}</DialogTitle>
-            <DialogContent>
-              <Typography gutterBottom>{selectedIssue.description}</Typography>
-
-              <Grid container spacing={2} sx={{ mt: 1 }}>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Status</Typography>
-                  <Chip
-                    label={selectedIssue.status}
-                    size="small"
-                    sx={{
-                      bgcolor: statusColors[selectedIssue.status] + '20',
-                      color: statusColors[selectedIssue.status]
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Priority</Typography>
-                  <Chip
-                    label={selectedIssue.priority}
-                    size="small"
-                    sx={{
-                      bgcolor: priorityColors[selectedIssue.priority] + '20',
-                      color: priorityColors[selectedIssue.priority]
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="body2" color="text.secondary">Location</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <LocationOn fontSize="small" color="action" />
-                    <Typography>{selectedIssue.location.address}</Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="body2" color="text.secondary">Category</Typography>
-                  <Typography>{selectedIssue.category}</Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="body2" color="text.secondary">Reporter</Typography>
-                  <Typography>{selectedIssue.reporter.name} ({selectedIssue.reporter.email})</Typography>
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="body2" color="text.secondary">Reported Date</Typography>
-                  <Typography>{new Date(selectedIssue.date).toLocaleDateString()}</Typography>
-                </Grid>
-              </Grid>
-
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="body2" color="text.secondary" gutterBottom>Update Status</Typography>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  {statusOptions.map((status) => (
-                    <Button
-                      key={status}
-                      variant={selectedIssue.status === status ? 'contained' : 'outlined'}
-                      size="small"
-                      onClick={() => {
-                        handleStatusChange(selectedIssue.id, status);
-                        setSelectedIssue({ ...selectedIssue, status });
-                      }}
-                    >
-                      {status}
-                    </Button>
-                  ))}
-                </Box>
-              </Box>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setShowIssueDetails(false)}>Close</Button>
-              <Button
-                variant="contained"
-                onClick={() => {
-                  setShowMessageDialog(true);
-                  setMessageType('email');
-                  setShowIssueDetails(false);
-                }}
-              >
-                Contact Reporter
-              </Button>
-            </DialogActions>
-          </>
-        )}
-      </Dialog>
+      {/* New Admin Issue Details Dialog */}
+      <AdminIssueDetailsDialog
+        open={showIssueDetails}
+        onClose={() => setShowIssueDetails(false)}
+        issue={selectedIssue}
+        onStatusUpdate={(id, newStatus) => {
+          handleStatusChange(id, newStatus);
+          setSelectedIssue({ ...selectedIssue, status: newStatus });
+        }}
+      />
 
       {/* Message Dialog */}
       <Dialog open={showMessageDialog} onClose={() => setShowMessageDialog(false)} maxWidth="sm" fullWidth>

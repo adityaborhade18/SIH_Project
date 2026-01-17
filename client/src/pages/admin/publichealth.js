@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import axios from 'axios';
+import AdminIssueTable from '../../components/admin/AdminIssueTable';
+import AdminIssueDetailsDialog from '../../components/admin/AdminIssueDetailsDialog';
 import {
   Box,
   Typography,
@@ -54,7 +56,7 @@ import {
   Sanitizer,
   Vaccine
 } from '@mui/icons-material';
-import { DataGrid } from '@mui/x-data-grid';
+// import { DataGrid } from '@mui/x-data-grid'; // Removed
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -218,29 +220,10 @@ const HealthDashboard = ({ onLogout }) => {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('email');
 
-  // Filter issues
-  const filteredIssues = useMemo(() => {
-    return healthIssues.filter(issue => {
-      if (filters.searchQuery && !`${issue.title} ${issue.description} ${issue.location.address}`.toLowerCase().includes(filters.searchQuery.toLowerCase())) {
-        return false;
-      }
-      if (filters.status.length > 0 && !filters.status.includes(issue.status)) {
-        return false;
-      }
-      if (filters.priority.length > 0 && !filters.priority.includes(issue.priority)) {
-        return false;
-      }
-      if (filters.dateRange[0] && new Date(issue.date) < filters.dateRange[0]) {
-        return false;
-      }
-      if (filters.dateRange[1] && new Date(issue.date) > filters.dateRange[1]) {
-        return false;
-      }
-      return true;
-    });
-  }, [healthIssues, filters]);
+
 
   const handleStatusChange = (id, newStatus) => {
+    // In a real app you'd call an API here.
     showSnackbar('Status updated successfully', 'success');
   };
 
@@ -285,74 +268,6 @@ const HealthDashboard = ({ onLogout }) => {
       count: categories[cat]
     }));
   }, [healthIssues]);
-
-  // Columns for DataGrid
-  const columns = [
-    {
-      field: 'date',
-      headerName: 'Date',
-      width: 120,
-      renderCell: (params) => new Date(params.value).toLocaleDateString()
-    },
-    {
-      field: 'title',
-      headerName: 'Health Issue',
-      flex: 1,
-      renderCell: (params) => (
-        <Box>
-          <Typography variant="body2" fontWeight="500">{params.value}</Typography>
-          <Typography variant="caption" color="text.secondary">
-            {params.row.category}
-          </Typography>
-        </Box>
-      )
-    },
-    {
-      field: 'priority',
-      headerName: 'Priority',
-      width: 120,
-      renderCell: (params) => (
-        <Chip
-          label={params.value}
-          size="small"
-          sx={{
-            backgroundColor: priorityColors[params.value] + '20',
-            color: priorityColors[params.value],
-            fontWeight: 500,
-            width: '80px'
-          }}
-        />
-      )
-    },
-    {
-      field: 'location',
-      headerName: 'Location',
-      width: 150,
-      renderCell: (params) => params.value.address.split(',')[0]
-    },
-    {
-      field: 'status',
-      headerName: 'Status',
-      width: 150,
-      renderCell: (params) => (
-        <Select
-          value={params.value}
-          onChange={(e) => handleStatusChange(params.id, e.target.value)}
-          size="small"
-          sx={{
-            width: '100%',
-            '& .MuiSelect-select': { py: 0.5 }
-          }}
-        >
-          {statusOptions.map((status) => (
-            <MenuItem key={status} value={status}>
-              {status}
-            </MenuItem>
-          ))}
-        </Select>
-      ),
-    },
-  ];
 
   // Health department stats
   const healthStats = [
@@ -576,26 +491,63 @@ const HealthDashboard = ({ onLogout }) => {
           </Box>
 
           {/* Issues Table */}
-          <Paper sx={{ p: 2 }}>
+          <Box sx={{ mt: 4 }}>
             <Typography variant="h6" gutterBottom>Recent Health Reports</Typography>
-            <DataGrid
-              rows={filteredIssues}
-              columns={columns}
-              pageSize={5}
-              rowsPerPageOptions={[5]}
-              checkboxSelection
-              onSelectionModelChange={handleRowSelection}
-              selectionModel={selectedIssues}
-              onRowClick={(params) => {
-                setSelectedIssue(params.row);
+            <AdminIssueTable
+              issues={healthIssues}
+              onViewDetails={(issue) => {
+                setSelectedIssue(issue);
                 setShowIssueDetails(true);
               }}
-              sx={{
-                border: 'none',
-                '& .MuiDataGrid-row:hover': { cursor: 'pointer' }
-              }}
             />
-          </Paper>
+          </Box>
+
+          <AdminIssueDetailsDialog
+            open={showIssueDetails}
+            onClose={() => setShowIssueDetails(false)}
+            issue={selectedIssue}
+            onStatusUpdate={(id, newStatus) => {
+              handleStatusChange(id, newStatus);
+              // Update local state if needed
+              const updatedIssues = healthIssues.map(issue =>
+                issue.id === id ? { ...issue, status: newStatus } : issue
+              );
+              setHealthIssues(updatedIssues);
+              if (selectedIssue && selectedIssue.id === id) {
+                setSelectedIssue({ ...selectedIssue, status: newStatus });
+              }
+            }}
+          />
+
+          {/* Bulk Action Dialog */}
+          <Dialog open={showBulkDialog} onClose={() => setShowBulkDialog(false)} maxWidth="sm" fullWidth>
+            <DialogTitle>Bulk Actions</DialogTitle>
+            <DialogContent>
+              <Typography variant="body1" paragraph>
+                You have selected {selectedIssues.length} issues. What would you like to do with them?
+              </Typography>
+              <FormControl fullWidth variant="outlined" size="small" sx={{ mb: 2 }}>
+                <InputLabel>Action</InputLabel>
+                <Select
+                  value={bulkAction}
+                  onChange={(e) => setBulkAction(e.target.value)}
+                  label="Action"
+                >
+                  <MenuItem value=""><em>Select an action</em></MenuItem>
+                  <MenuItem value="In Process">Mark as In Process</MenuItem>
+                  <MenuItem value="Assigned">Assign to Team</MenuItem>
+                  <MenuItem value="Solved">Mark as Solved</MenuItem>
+                  <MenuItem value="Rejected">Reject Selected</MenuItem>
+                </Select>
+              </FormControl>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setShowBulkDialog(false)}>Cancel</Button>
+              <Button onClick={handleBulkAction} variant="contained" color="primary" disabled={!bulkAction}>
+                Apply
+              </Button>
+            </DialogActions>
+          </Dialog>
         </>
       )}
 
