@@ -1,15 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Select, 
-  MenuItem, 
-  FormControl, 
-  InputLabel, 
-  Avatar, 
-  Chip, 
-  Card, 
+import axios from 'axios';
+import {
+  Box,
+  Typography,
+  Paper,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Avatar,
+  Chip,
+  Card,
   CardContent,
   IconButton,
   Tooltip,
@@ -27,12 +28,14 @@ import {
   Menu,
   ListItemText
 } from '@mui/material';
-import { 
-  CheckCircleOutline, 
-  PendingActions, 
-  Build, 
-  Warning, 
+import {
+  CheckCircleOutline,
+  PendingActions,
+  Build,
+  Warning,
   FilterList,
+  Refresh,
+  Logout,
   Search,
   Assignment,
   Send,
@@ -160,106 +163,42 @@ const healthIcon = new L.Icon({
   popupAnchor: [0, -32],
 });
 
-const HealthDashboard = () => {
-  // Dummy health issues data
-  const healthIssues = [
-    {
-      id: 1,
-      title: 'Mosquito breeding in Shivajinagar',
-      description: 'Stagnant water causing dengue outbreak risk.',
-      location: { address: 'Shivajinagar, Pune', coordinates: [18.5310, 73.8446] },
-      category: 'Disease Control',
-      status: 'Pending',
-      priority: 'Critical',
-      date: new Date().toISOString(),
-      reporter: { name: 'Dr. Anjali Sharma', email: 'anjali@hospital.com' },
-      images: [],
-    },
-    {
-      id: 2,
-      title: 'Clinic shortage in Deccan area',
-      description: 'No doctors available for emergency cases.',
-      location: { address: 'Deccan Gymkhana, Pune', coordinates: [18.5402, 73.8555] },
-      category: 'Healthcare Access',
-      status: 'Assigned',
-      priority: 'High',
-      date: new Date().toISOString(),
-      reporter: { name: 'Rajesh Mehta', email: 'rajesh@example.com' },
-      images: [],
-    },
-    {
-      id: 3,
-      title: 'Dengue outbreak in Yerwada',
-      description: 'Multiple confirmed dengue cases reported.',
-      location: { address: 'Yerwada, Pune', coordinates: [18.5910, 73.8215] },
-      category: 'Disease Control',
-      status: 'In Process',
-      priority: 'Critical',
-      date: new Date().toISOString(),
-      reporter: { name: 'Health Inspector Kumar', email: 'inspector@health.gov' },
-      images: [],
-    },
-    {
-      id: 4,
-      title: 'Sewage overflow in Kalyani Nagar',
-      description: 'Open sewage causing health hazards.',
-      location: { address: 'Kalyani Nagar, Pune', coordinates: [18.5201, 73.9125] },
-      category: 'Sanitation',
-      status: 'Solved',
-      priority: 'High',
-      date: new Date().toISOString(),
-      reporter: { name: 'Priya Singh', email: 'priya@example.com' },
-      images: [],
-    },
-    {
-      id: 5,
-      title: 'Garbage pile up in Swargate',
-      description: 'Uncollected garbage causing rat infestation.',
-      location: { address: 'Swargate, Pune', coordinates: [18.5145, 73.8451] },
-      category: 'Sanitation',
-      status: 'Pending',
-      priority: 'Medium',
-      date: new Date().toISOString(),
-      reporter: { name: 'Mohan Das', email: 'mohan@example.com' },
-      images: [],
-    },
-    {
-      id: 6,
-      title: 'Water contamination in Aundh',
-      description: 'Residents reporting gastroenteritis cases.',
-      location: { address: 'Aundh, Pune', coordinates: [18.5603, 73.8065] },
-      category: 'Water Quality',
-      status: 'Assigned',
-      priority: 'Critical',
-      date: new Date().toISOString(),
-      reporter: { name: 'Dr. Ravi Verma', email: 'ravi@clinic.com' },
-      images: [],
-    },
-    {
-      id: 7,
-      title: 'Flu outbreak in Kothrud',
-      description: 'Multiple influenza cases in schools.',
-      location: { address: 'Kothrud, Pune', coordinates: [18.4967, 73.8627] },
-      category: 'Disease Control',
-      status: 'In Process',
-      priority: 'High',
-      date: new Date().toISOString(),
-      reporter: { name: 'School Principal Sharma', email: 'principal@school.edu' },
-      images: [],
-    },
-    {
-      id: 8,
-      title: 'Sanitation in slum area',
-      description: 'Poor sanitation facilities causing diseases.',
-      location: { address: 'Baner Road, Pune', coordinates: [18.5074, 73.8077] },
-      category: 'Sanitation',
-      status: 'Solved',
-      priority: 'Medium',
-      date: new Date().toISOString(),
-      reporter: { name: 'Social Worker Reddy', email: 'worker@ngo.org' },
-      images: [],
-    },
-  ];
+const HealthDashboard = ({ onLogout }) => {
+  const [healthIssues, setHealthIssues] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchIssues = async () => {
+    try {
+      setLoading(true);
+      const { data } = await axios.get('/api/user/getallissue?department=PublicHealth');
+      if (data.success) {
+        const mappedIssues = data.issues.map(issue => ({
+          id: issue._id,
+          title: issue.title,
+          description: issue.description,
+          location: {
+            address: issue.address || "No address",
+            coordinates: issue.location?.coordinates || [0, 0]
+          },
+          category: issue.department || 'PublicHealth',
+          status: issue.status,
+          priority: issue.priority,
+          date: issue.createdAt,
+          reporter: issue.createdBy || { name: 'Unknown', email: '' },
+          images: issue.image ? [issue.image] : []
+        }));
+        setHealthIssues(mappedIssues);
+      }
+    } catch (error) {
+      console.error("Failed to fetch issues", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchIssues();
+  }, []);
 
   const [selectedIssues, setSelectedIssues] = useState([]);
   const [filters, setFilters] = useState({
@@ -349,15 +288,15 @@ const HealthDashboard = () => {
 
   // Columns for DataGrid
   const columns = [
-    { 
-      field: 'date', 
-      headerName: 'Date', 
+    {
+      field: 'date',
+      headerName: 'Date',
       width: 120,
       renderCell: (params) => new Date(params.value).toLocaleDateString()
     },
-    { 
-      field: 'title', 
-      headerName: 'Health Issue', 
+    {
+      field: 'title',
+      headerName: 'Health Issue',
       flex: 1,
       renderCell: (params) => (
         <Box>
@@ -368,9 +307,9 @@ const HealthDashboard = () => {
         </Box>
       )
     },
-    { 
-      field: 'priority', 
-      headerName: 'Priority', 
+    {
+      field: 'priority',
+      headerName: 'Priority',
       width: 120,
       renderCell: (params) => (
         <Chip
@@ -385,9 +324,9 @@ const HealthDashboard = () => {
         />
       )
     },
-    { 
-      field: 'location', 
-      headerName: 'Location', 
+    {
+      field: 'location',
+      headerName: 'Location',
       width: 150,
       renderCell: (params) => params.value.address.split(',')[0]
     },
@@ -400,7 +339,7 @@ const HealthDashboard = () => {
           value={params.value}
           onChange={(e) => handleStatusChange(params.id, e.target.value)}
           size="small"
-          sx={{ 
+          sx={{
             width: '100%',
             '& .MuiSelect-select': { py: 0.5 }
           }}
@@ -448,10 +387,10 @@ const HealthDashboard = () => {
             sx: { width: 300 }
           }}
         />
-        
+
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             startIcon={<FilterList />}
             onClick={(e) => setAnchorEl(e.currentTarget)}
           >
@@ -503,7 +442,7 @@ const HealthDashboard = () => {
               ))}
             </Select>
           </FormControl>
-          
+
           <FormControl fullWidth size="small" sx={{ mb: 2 }}>
             <InputLabel>Priority</InputLabel>
             <Select
@@ -520,7 +459,7 @@ const HealthDashboard = () => {
               ))}
             </Select>
           </FormControl>
-          
+
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <DatePicker
               label="From Date"
@@ -535,10 +474,10 @@ const HealthDashboard = () => {
               renderInput={(params) => <TextField {...params} size="small" fullWidth />}
             />
           </LocalizationProvider>
-          
+
           <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button 
-              size="small" 
+            <Button
+              size="small"
               onClick={() => setFilters({
                 status: [],
                 priority: [],
@@ -548,9 +487,9 @@ const HealthDashboard = () => {
             >
               Reset
             </Button>
-            <Button 
-              variant="contained" 
-              size="small" 
+            <Button
+              variant="contained"
+              size="small"
               onClick={() => setAnchorEl(null)}
               sx={{ ml: 1 }}
             >
@@ -561,9 +500,9 @@ const HealthDashboard = () => {
       </Menu>
 
       {/* Stats Cards */}
-      <Box sx={{ 
-        display: 'grid', 
-        gap: 2, 
+      <Box sx={{
+        display: 'grid',
+        gap: 2,
         gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
         mb: 3
       }}>
@@ -585,8 +524,8 @@ const HealthDashboard = () => {
       </Box>
 
       {/* Tabs */}
-      <Tabs 
-        value={activeTab} 
+      <Tabs
+        value={activeTab}
         onChange={(e, newValue) => setActiveTab(newValue)}
         sx={{ mb: 3 }}
       >
@@ -651,7 +590,7 @@ const HealthDashboard = () => {
                 setSelectedIssue(params.row);
                 setShowIssueDetails(true);
               }}
-              sx={{ 
+              sx={{
                 border: 'none',
                 '& .MuiDataGrid-row:hover': { cursor: 'pointer' }
               }}
@@ -813,7 +752,7 @@ const HealthDashboard = () => {
               </Card>
             </Grid>
           </Grid>
-          
+
           <Box sx={{ mt: 4 }}>
             <Typography variant="h6" gutterBottom>Emergency Contacts & Resources</Typography>
             <Grid container spacing={2}>
@@ -836,7 +775,7 @@ const HealthDashboard = () => {
                 </Card>
               </Grid>
             </Grid>
-            
+
             <Box sx={{ mt: 3 }}>
               <Typography variant="subtitle2" gutterBottom>Active Health Programs</Typography>
               <Grid container spacing={2}>
@@ -896,8 +835,8 @@ const HealthDashboard = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowBulkDialog(false)}>Cancel</Button>
-          <Button 
-            onClick={handleBulkAction} 
+          <Button
+            onClick={handleBulkAction}
             variant="contained"
             disabled={!bulkAction}
           >
@@ -913,14 +852,14 @@ const HealthDashboard = () => {
             <DialogTitle>{selectedIssue.title}</DialogTitle>
             <DialogContent>
               <Typography gutterBottom>{selectedIssue.description}</Typography>
-              
+
               <Grid container spacing={2} sx={{ mt: 1 }}>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">Status</Typography>
-                  <Chip 
-                    label={selectedIssue.status} 
+                  <Chip
+                    label={selectedIssue.status}
                     size="small"
-                    sx={{ 
+                    sx={{
                       bgcolor: statusColors[selectedIssue.status] + '20',
                       color: statusColors[selectedIssue.status]
                     }}
@@ -928,10 +867,10 @@ const HealthDashboard = () => {
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">Priority</Typography>
-                  <Chip 
-                    label={selectedIssue.priority} 
+                  <Chip
+                    label={selectedIssue.priority}
                     size="small"
-                    sx={{ 
+                    sx={{
                       bgcolor: priorityColors[selectedIssue.priority] + '20',
                       color: priorityColors[selectedIssue.priority]
                     }}
@@ -979,7 +918,7 @@ const HealthDashboard = () => {
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setShowIssueDetails(false)}>Close</Button>
-              <Button 
+              <Button
                 variant="contained"
                 onClick={() => {
                   setShowMessageDialog(true);
@@ -1015,7 +954,7 @@ const HealthDashboard = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowMessageDialog(false)}>Cancel</Button>
-          <Button 
+          <Button
             variant="contained"
             onClick={() => {
               setShowMessageDialog(false);
@@ -1029,7 +968,7 @@ const HealthDashboard = () => {
 
       {/* Snackbar */}
       {snackbar.open && (
-        <Alert 
+        <Alert
           severity={snackbar.severity}
           onClose={() => setSnackbar({ ...snackbar, open: false })}
           sx={{ position: 'fixed', bottom: 20, right: 20, minWidth: 300 }}

@@ -1,15 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Select, 
-  MenuItem, 
-  FormControl, 
-  InputLabel, 
-  Avatar, 
-  Chip, 
-  Card, 
+import axios from 'axios';
+import {
+  Box,
+  Typography,
+  Paper,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Avatar,
+  Chip,
+  Card,
   CardContent,
   IconButton,
   Tooltip,
@@ -27,12 +28,14 @@ import {
   Menu,
   ListItemText
 } from '@mui/material';
-import { 
-  CheckCircleOutline, 
-  PendingActions, 
-  Build, 
-  Warning, 
+import {
+  CheckCircleOutline,
+  PendingActions,
+  Build,
+  Warning,
   FilterList,
+  Refresh,
+  Logout,
   Search,
   Assignment,
   Send,
@@ -155,82 +158,42 @@ const waterIcon = new L.Icon({
   popupAnchor: [0, -32],
 });
 
-const WaterDashboard = () => {
-  // Dummy water issues data
-  const waterIssues = [
-    {
-      id: 1,
-      title: 'Water shortage in Kothrud',
-      description: 'Low water pressure in Kothrud area for 3 days.',
-      location: { address: 'Kothrud, Pune', coordinates: [18.4967, 73.8627] },
-      category: 'Water Supply',
-      status: 'Pending',
-      priority: 'High',
-      date: new Date().toISOString(),
-      reporter: { name: 'Rajesh Kumar', email: 'rajesh@example.com' },
-      images: [],
-    },
-    {
-      id: 2,
-      title: 'Pipeline leakage',
-      description: 'Water pipeline burst near Hadapsar market.',
-      location: { address: 'Hadapsar, Pune', coordinates: [18.5821, 73.8931] },
-      category: 'Water Supply',
-      status: 'Assigned',
-      priority: 'Critical',
-      date: new Date().toISOString(),
-      reporter: { name: 'Meena Sharma', email: 'meena@example.com' },
-      images: [],
-    },
-    {
-      id: 3,
-      title: 'No water in Koregaon Park',
-      description: 'Residents reporting no water supply since yesterday.',
-      location: { address: 'Koregaon Park, Pune', coordinates: [18.5705, 73.8675] },
-      category: 'Water Supply',
-      status: 'In Process',
-      priority: 'High',
-      date: new Date().toISOString(),
-      reporter: { name: 'Amit Patel', email: 'amit@example.com' },
-      images: [],
-    },
-    {
-      id: 4,
-      title: 'Contaminated water in Parvati',
-      description: 'Water has foul smell and color in Parvati area.',
-      location: { address: 'Parvati, Pune', coordinates: [18.4954, 73.8257] },
-      category: 'Water Supply',
-      status: 'Solved',
-      priority: 'Medium',
-      date: new Date().toISOString(),
-      reporter: { name: 'Priya Singh', email: 'priya@example.com' },
-      images: [],
-    },
-    {
-      id: 5,
-      title: 'Low water pressure in FC Road',
-      description: 'Weak water flow in apartment buildings.',
-      location: { address: 'FC Road, Pune', coordinates: [18.5204, 73.8567] },
-      category: 'Water Supply',
-      status: 'Pending',
-      priority: 'Medium',
-      date: new Date().toISOString(),
-      reporter: { name: 'Rahul Verma', email: 'rahul@example.com' },
-      images: [],
-    },
-    {
-      id: 6,
-      title: 'Water tanker requirement',
-      description: 'Area facing acute water shortage, needs immediate tanker.',
-      location: { address: 'Shivajinagar, Pune', coordinates: [18.5314, 73.8446] },
-      category: 'Water Supply',
-      status: 'Assigned',
-      priority: 'Critical',
-      date: new Date().toISOString(),
-      reporter: { name: 'Sneha Reddy', email: 'sneha@example.com' },
-      images: [],
-    },
-  ];
+const WaterDashboard = ({ onLogout }) => {
+  const [waterIssues, setWaterIssues] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchIssues = async () => {
+    try {
+      setLoading(true);
+      const { data } = await axios.get('/api/user/getallissue?department=Water');
+      if (data.success) {
+        const mappedIssues = data.issues.map(issue => ({
+          id: issue._id,
+          title: issue.title,
+          description: issue.description,
+          location: {
+            address: issue.address || "No address",
+            coordinates: issue.location?.coordinates || [0, 0]
+          },
+          category: issue.department || 'Water Supply',
+          status: issue.status,
+          priority: issue.priority,
+          date: issue.createdAt,
+          reporter: issue.createdBy || { name: 'Unknown', email: '' },
+          images: issue.image ? [issue.image] : []
+        }));
+        setWaterIssues(mappedIssues);
+      }
+    } catch (error) {
+      console.error("Failed to fetch issues", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchIssues();
+  }, []);
 
   const [selectedIssues, setSelectedIssues] = useState([]);
   const [filters, setFilters] = useState({
@@ -316,15 +279,15 @@ const WaterDashboard = () => {
 
   // Columns for DataGrid
   const columns = [
-    { 
-      field: 'date', 
-      headerName: 'Date', 
+    {
+      field: 'date',
+      headerName: 'Date',
       width: 120,
       renderCell: (params) => new Date(params.value).toLocaleDateString()
     },
-    { 
-      field: 'title', 
-      headerName: 'Issue', 
+    {
+      field: 'title',
+      headerName: 'Issue',
       flex: 1,
       renderCell: (params) => (
         <Box>
@@ -335,9 +298,9 @@ const WaterDashboard = () => {
         </Box>
       )
     },
-    { 
-      field: 'priority', 
-      headerName: 'Priority', 
+    {
+      field: 'priority',
+      headerName: 'Priority',
       width: 120,
       renderCell: (params) => (
         <Chip
@@ -352,9 +315,9 @@ const WaterDashboard = () => {
         />
       )
     },
-    { 
-      field: 'location', 
-      headerName: 'Location', 
+    {
+      field: 'location',
+      headerName: 'Location',
       width: 150,
       renderCell: (params) => params.value.address.split(',')[0]
     },
@@ -367,7 +330,7 @@ const WaterDashboard = () => {
           value={params.value}
           onChange={(e) => handleStatusChange(params.id, e.target.value)}
           size="small"
-          sx={{ 
+          sx={{
             width: '100%',
             '& .MuiSelect-select': { py: 0.5 }
           }}
@@ -415,10 +378,25 @@ const WaterDashboard = () => {
             sx: { width: 300 }
           }}
         />
-        
+
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<Logout />}
+            onClick={onLogout}
+          >
+            Logout
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={fetchIssues}
+          >
+            Refresh
+          </Button>
+          <Button
+            variant="outlined"
             startIcon={<FilterList />}
             onClick={(e) => setAnchorEl(e.currentTarget)}
           >
@@ -470,7 +448,7 @@ const WaterDashboard = () => {
               ))}
             </Select>
           </FormControl>
-          
+
           <FormControl fullWidth size="small" sx={{ mb: 2 }}>
             <InputLabel>Priority</InputLabel>
             <Select
@@ -487,7 +465,7 @@ const WaterDashboard = () => {
               ))}
             </Select>
           </FormControl>
-          
+
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <DatePicker
               label="From Date"
@@ -502,10 +480,10 @@ const WaterDashboard = () => {
               renderInput={(params) => <TextField {...params} size="small" fullWidth />}
             />
           </LocalizationProvider>
-          
+
           <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button 
-              size="small" 
+            <Button
+              size="small"
               onClick={() => setFilters({
                 status: [],
                 priority: [],
@@ -515,9 +493,9 @@ const WaterDashboard = () => {
             >
               Reset
             </Button>
-            <Button 
-              variant="contained" 
-              size="small" 
+            <Button
+              variant="contained"
+              size="small"
               onClick={() => setAnchorEl(null)}
               sx={{ ml: 1 }}
             >
@@ -528,9 +506,9 @@ const WaterDashboard = () => {
       </Menu>
 
       {/* Stats Cards */}
-      <Box sx={{ 
-        display: 'grid', 
-        gap: 2, 
+      <Box sx={{
+        display: 'grid',
+        gap: 2,
         gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
         mb: 3
       }}>
@@ -552,8 +530,8 @@ const WaterDashboard = () => {
       </Box>
 
       {/* Tabs */}
-      <Tabs 
-        value={activeTab} 
+      <Tabs
+        value={activeTab}
         onChange={(e, newValue) => setActiveTab(newValue)}
         sx={{ mb: 3 }}
       >
@@ -618,7 +596,7 @@ const WaterDashboard = () => {
                 setSelectedIssue(params.row);
                 setShowIssueDetails(true);
               }}
-              sx={{ 
+              sx={{
                 border: 'none',
                 '& .MuiDataGrid-row:hover': { cursor: 'pointer' }
               }}
@@ -780,7 +758,7 @@ const WaterDashboard = () => {
               </Card>
             </Grid>
           </Grid>
-          
+
           <Box sx={{ mt: 4 }}>
             <Typography variant="h6" gutterBottom>Team Contact</Typography>
             <Grid container spacing={2}>
@@ -830,8 +808,8 @@ const WaterDashboard = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowBulkDialog(false)}>Cancel</Button>
-          <Button 
-            onClick={handleBulkAction} 
+          <Button
+            onClick={handleBulkAction}
             variant="contained"
             disabled={!bulkAction}
           >
@@ -847,14 +825,14 @@ const WaterDashboard = () => {
             <DialogTitle>{selectedIssue.title}</DialogTitle>
             <DialogContent>
               <Typography gutterBottom>{selectedIssue.description}</Typography>
-              
+
               <Grid container spacing={2} sx={{ mt: 1 }}>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">Status</Typography>
-                  <Chip 
-                    label={selectedIssue.status} 
+                  <Chip
+                    label={selectedIssue.status}
                     size="small"
-                    sx={{ 
+                    sx={{
                       bgcolor: statusColors[selectedIssue.status] + '20',
                       color: statusColors[selectedIssue.status]
                     }}
@@ -862,10 +840,10 @@ const WaterDashboard = () => {
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="text.secondary">Priority</Typography>
-                  <Chip 
-                    label={selectedIssue.priority} 
+                  <Chip
+                    label={selectedIssue.priority}
                     size="small"
-                    sx={{ 
+                    sx={{
                       bgcolor: priorityColors[selectedIssue.priority] + '20',
                       color: priorityColors[selectedIssue.priority]
                     }}
@@ -909,7 +887,7 @@ const WaterDashboard = () => {
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setShowIssueDetails(false)}>Close</Button>
-              <Button 
+              <Button
                 variant="contained"
                 onClick={() => {
                   setShowMessageDialog(true);
@@ -945,7 +923,7 @@ const WaterDashboard = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowMessageDialog(false)}>Cancel</Button>
-          <Button 
+          <Button
             variant="contained"
             onClick={() => {
               setShowMessageDialog(false);
@@ -959,7 +937,7 @@ const WaterDashboard = () => {
 
       {/* Snackbar */}
       {snackbar.open && (
-        <Alert 
+        <Alert
           severity={snackbar.severity}
           onClose={() => setSnackbar({ ...snackbar, open: false })}
           sx={{ position: 'fixed', bottom: 20, right: 20, minWidth: 300 }}

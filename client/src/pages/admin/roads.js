@@ -34,6 +34,8 @@ import {
   Build,
   Warning,
   FilterList,
+  Refresh,
+  Logout,
   Search,
   Assignment,
   Send,
@@ -159,40 +161,41 @@ const roadsIcon = new L.Icon({
   popupAnchor: [0, -32],
 });
 
-const RoadsTransportDashboard = () => {
+const RoadsTransportDashboard = ({ onLogout }) => {
   const [roadsIssues, setRoadsIssues] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
-    const fetchIssues = async () => {
-      try {
-        // Fetch 'Roads' department issues. Or 'Roads & Transport' if I named it that.
-        // In issueController, I mapped 'pothole' -> 'Roads'.
-        const { data } = await axios.get('/api/user/getallissue?department=Roads');
-        if (data.success) {
-          const mappedIssues = data.issues.map(issue => ({
-            id: issue._id,
-            title: issue.title,
-            description: issue.description,
-            location: {
-              address: issue.address || "No address",
-              coordinates: issue.location?.coordinates || [0, 0]
-            },
-            category: issue.department || 'Roads',
-            status: issue.status,
-            priority: issue.priority,
-            date: issue.createdAt,
-            reporter: issue.createdBy || { name: 'Unknown', email: '' },
-            images: issue.image ? [issue.image] : []
-          }));
-          setRoadsIssues(mappedIssues);
-        }
-      } catch (error) {
-        console.error("Failed to fetch issues", error);
-      } finally {
-        setLoading(false);
+  const fetchIssues = async () => {
+    try {
+      setLoading(true);
+      // Fetch 'Roads' department issues.
+      const { data } = await axios.get('/api/user/getallissue?department=Roads');
+      if (data.success) {
+        const mappedIssues = data.issues.map(issue => ({
+          id: issue._id,
+          title: issue.title,
+          description: issue.description,
+          location: {
+            address: issue.address || "No address",
+            coordinates: issue.location?.coordinates || [0, 0]
+          },
+          category: issue.department || 'Roads',
+          status: issue.status,
+          priority: issue.priority,
+          date: issue.createdAt,
+          reporter: issue.createdBy || { name: 'Unknown', email: '' },
+          images: issue.image ? [issue.image] : []
+        }));
+        setRoadsIssues(mappedIssues);
       }
-    };
+    } catch (error) {
+      console.error("Failed to fetch issues", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
     fetchIssues();
   }, []);
 
@@ -385,6 +388,21 @@ const RoadsTransportDashboard = () => {
         />
 
         <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<Logout />}
+            onClick={onLogout}
+          >
+            Logout
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={fetchIssues}
+          >
+            Refresh
+          </Button>
           <Button
             variant="outlined"
             startIcon={<FilterList />}

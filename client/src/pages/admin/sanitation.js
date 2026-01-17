@@ -290,7 +290,7 @@ const categoryIcons = {
   }),
 };
 
-const SanitationDashboard = () => {
+const SanitationDashboard = ({ onLogout }) => {
   const navigate = useNavigate();
   const theme = useTheme();
   const { updateIssueStatus } = useIssues();
@@ -298,35 +298,37 @@ const SanitationDashboard = () => {
   const [sanitationIssues, setSanitationIssues] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchIssues = async () => {
-      try {
-        const { data } = await axios.get('/api/user/getallissue?department=Sanitation');
-        if (data.success) {
-          const mappedIssues = data.issues.map(issue => ({
-            id: issue._id,
-            title: issue.title,
-            description: issue.description,
-            location: {
-              address: issue.address || "No address",
-              coordinates: issue.location?.coordinates || [0, 0]
-            },
-            category: issue.department || 'Sanitation',
-            status: issue.status,
-            priority: issue.priority,
-            date: issue.createdAt,
-            reporter: issue.createdBy || { name: 'Unknown', email: '' },
-            images: issue.image ? [issue.image] : []
-          }));
-          setSanitationIssues(mappedIssues);
-        }
-      } catch (error) {
-        console.error("Failed to fetch issues", error);
-        toast.error("Failed to load issues");
-      } finally {
-        setLoading(false);
+  const fetchIssues = async () => {
+    try {
+      setLoading(true);
+      const { data } = await axios.get('/api/user/getallissue?department=Sanitation');
+      if (data.success) {
+        const mappedIssues = data.issues.map(issue => ({
+          id: issue._id,
+          title: issue.title,
+          description: issue.description,
+          location: {
+            address: issue.address || "No address",
+            coordinates: issue.location?.coordinates || [0, 0]
+          },
+          category: issue.department || 'Sanitation',
+          status: issue.status,
+          priority: issue.priority,
+          date: issue.createdAt,
+          reporter: issue.createdBy || { name: 'Unknown', email: '' },
+          images: issue.image ? [issue.image] : []
+        }));
+        setSanitationIssues(mappedIssues);
       }
-    };
+    } catch (error) {
+      console.error("Failed to fetch issues", error);
+      toast.error("Failed to load issues");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchIssues();
   }, []);
 
@@ -575,24 +577,6 @@ const SanitationDashboard = () => {
     },
   ];
 
-
-  const handleLogout = async () => {
-    try {
-      const { data } = await axios.post('/api/admin/logout');
-      if (data.success) {
-        toast.success(data.message);
-        navigate('/admin/sanitation'); // Assuming this redirects to login if unauth, or we can use custom path
-        window.location.reload();
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      console.error("Logout failed", error);
-      toast.error("Logout failed");
-    }
-  };
-
-
   // Render the component
   return (
     <Box sx={{ p: 3, py: 8 }}>
@@ -612,14 +596,14 @@ const SanitationDashboard = () => {
             variant="outlined"
             color="error"
             startIcon={<Logout />}
-            onClick={handleLogout}
+            onClick={onLogout}
           >
             Logout
           </Button>
           <Button
             variant="outlined"
             startIcon={<Refresh />}
-            onClick={() => window.location.reload()}
+            onClick={fetchIssues}
           >
             Refresh
           </Button>

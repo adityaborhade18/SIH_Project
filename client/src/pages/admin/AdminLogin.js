@@ -41,15 +41,29 @@ const AdminLogin = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await axios.post('/api/admin/logout');
+      setAdmin(false);
+      setLoggedInDepartment(null);
+      navigate(`/admin/${section || 'login'}`);
+      toast.success('Logged out successfully');
+    } catch (error) {
+      console.error(error);
+      toast.error('Logout failed');
+    }
+  };
 
   if (admin) {
     const targetSection = loggedInDepartment || section;
-    if (targetSection === 'sanitation') return <SanitationDashboard />;
-    if (targetSection === 'publichealth') return <Publichealth />;
-    if (targetSection === 'roads') return <RoaddepartmentDashboard />;
-    if (targetSection === 'water') return <Waterdepartment />;
-    if (targetSection === 'electricity') return <Electricitydepartment />;
-    return <SanitationDashboard />;
+    const props = { onLogout: handleLogout };
+
+    if (targetSection === 'sanitation') return <SanitationDashboard {...props} />;
+    if (targetSection === 'publichealth') return <Publichealth {...props} />;
+    if (targetSection === 'roads') return <RoaddepartmentDashboard {...props} />;
+    if (targetSection === 'water') return <Waterdepartment {...props} />;
+    if (targetSection === 'electricity') return <Electricitydepartment {...props} />;
+    return <SanitationDashboard {...props} />;
   }
 
   return (

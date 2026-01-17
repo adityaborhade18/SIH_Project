@@ -79,7 +79,8 @@ import {
   VideoLibrary,
   AttachFile,
   CleaningServices,
-  ElectricBike
+  ElectricBike,
+  Logout
 } from '@mui/icons-material';
 import { useIssues } from '../../context/IssueContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
@@ -106,44 +107,44 @@ const priorityColors = {
   'Critical': '#f44336'
 };
 
-const Electricitydepartment = () => {
+const Electricitydepartment = ({ onLogout }) => {
   const theme = useTheme();
   // const { issues, updateIssueStatus } = useIssues(); // Removed context usage
   const { updateIssueStatus } = useIssues(); // Keep updateIssueStatus if needed, or implement it locally. 
-  // Actually, updateIssueStatus from context might not work if issues are not loaded from context. 
-  // But wait, the previous code used `useIssues`. I should probably implement handleStatusChange to call API.
 
   const [electricityIssues, setElectricityIssues] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchIssues = async () => {
-      try {
-        const { data } = await axios.get('/api/user/getallissue?department=Electricity');
-        if (data.success) {
-          const mappedIssues = data.issues.map(issue => ({
-            id: issue._id,
-            title: issue.title,
-            description: issue.description,
-            location: {
-              address: issue.address || "No address",
-              coordinates: issue.location?.coordinates || [0, 0]
-            },
-            category: issue.department || 'Electricity',
-            status: issue.status,
-            priority: issue.priority,
-            date: issue.createdAt,
-            reporter: issue.createdBy || { name: 'Unknown', email: '' },
-            images: issue.image ? [issue.image] : []
-          }));
-          setElectricityIssues(mappedIssues);
-        }
-      } catch (error) {
-        console.error("Failed to fetch issues", error);
-      } finally {
-        setLoading(false);
+  const fetchIssues = async () => {
+    try {
+      setLoading(true);
+      const { data } = await axios.get('/api/user/getallissue?department=Electricity');
+      if (data.success) {
+        const mappedIssues = data.issues.map(issue => ({
+          id: issue._id,
+          title: issue.title,
+          description: issue.description,
+          location: {
+            address: issue.address || "No address",
+            coordinates: issue.location?.coordinates || [0, 0]
+          },
+          category: issue.department || 'Electricity',
+          status: issue.status,
+          priority: issue.priority,
+          date: issue.createdAt,
+          reporter: issue.createdBy || { name: 'Unknown', email: '' },
+          images: issue.image ? [issue.image] : []
+        }));
+        setElectricityIssues(mappedIssues);
       }
-    };
+    } catch (error) {
+      console.error("Failed to fetch issues", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchIssues();
   }, []);
 
@@ -446,9 +447,18 @@ const Electricitydepartment = () => {
           <Button
             variant="outlined"
             startIcon={<Refresh />}
-            onClick={() => window.location.reload()}
+            onClick={fetchIssues}
           >
             Refresh
+          </Button>
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<Logout />}
+            onClick={onLogout}
+            sx={{ ml: 1 }}
+          >
+            Logout
           </Button>
           <Button
             variant="contained"
