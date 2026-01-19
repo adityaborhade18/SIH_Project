@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -18,7 +18,25 @@ const AdminLogin = () => {
   const [password, setPassword] = useState('');
   const [loggedInDepartment, setLoggedInDepartment] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    const checkAdminAuth = async () => {
+      try {
+        const { data } = await axios.get('/api/admin/is-auth');
+        if (data.success) {
+          setAdmin(true);
+          setLoggedInDepartment(data.department);
+        }
+      } catch (error) {
+        // Not authenticated, stay on login page
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+    checkAdminAuth();
+  }, []);
 
   const onSubmitHandler = async (event) => {
     try {
@@ -53,6 +71,14 @@ const AdminLogin = () => {
       toast.error('Logout failed');
     }
   };
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex justify-center items-center bg-gray-50">
+        <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
 
   if (admin) {
     const targetSection = loggedInDepartment || section;
