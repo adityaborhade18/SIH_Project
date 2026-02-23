@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import {
     CalendarToday, LocationOn,
-    CopyAll, Navigation, GpsFixed, Straighten,
+    CopyAll, GpsFixed, Straighten,
     Close, Directions
 } from '@mui/icons-material';
 import { format } from 'date-fns';

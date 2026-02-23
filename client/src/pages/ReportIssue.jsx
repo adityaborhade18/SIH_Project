@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -24,10 +24,8 @@ const DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 export default function ReportIssue() {
-  const fileInputRef = useRef();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [activeStep, setActiveStep] = useState(0);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -199,16 +197,6 @@ export default function ReportIssue() {
 
     return Object.keys(newErrors).length === 0;
   };
-
-  // const handleSubmit = (e) => {
-  //   e.preventDefault();
-  //   if (!validateForm()) return;
-  //   // Submit form data to backend or API
-
-  //   // Reset form
-
-
-  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -387,53 +375,7 @@ export default function ReportIssue() {
                 )}
               </div>
 
-              {/* Image Upload */}
-              {/* <div>
-                <label className="font-semibold">Upload Image *</label>
 
-                {!formData.imagePreview ? (
-                  <div
-                    className="border-2 border-dashed p-6 rounded-xl text-center cursor-pointer"
-                    onClick={() => fileInputRef.current.click()}
-                  >
-                    <p className="text-gray-500">Click to upload</p>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={formData.imagePreview}
-                      alt="Preview"
-                      className="w-32 h-32 rounded-lg object-cover border"
-                    />
-                    <button
-                      type="button"
-                      className="text-red-600 font-semibold"
-                      onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          image: null,
-                          imagePreview: null,
-                        }))
-                      }
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
-                {errors.image && (
-                  <p className="text-red-500 text-sm">{errors.image}</p>
-                )}
-              </div> */}
-
-              {/* Camera Capture */}
               <div>
                 <label className="font-semibold">Capture Image *</label>
 

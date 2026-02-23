@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import AuthLayout from '../components/auth/AuthLayout';
@@ -18,7 +18,6 @@ import {
 
 const ForgotPassword = () => {
   const theme = useTheme();
-  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -39,13 +38,13 @@ const ForgotPassword = () => {
         setIsSubmitting(true);
         setError('');
         setSuccess('');
-        
+
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         // TODO: Replace with actual password reset logic
         console.log('Password reset requested for:', values.email);
-        
+
         // Show success message
         setSuccess('Password reset link has been sent to your email.');
       } catch (err) {
@@ -58,7 +57,7 @@ const ForgotPassword = () => {
   });
 
   return (
-    <AuthLayout 
+    <AuthLayout
       title="Forgot Password"
       icon={EmailIcon}
     >

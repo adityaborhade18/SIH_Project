@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from 'react';
+import { createContext, useState, useContext } from 'react';
 
 const IssueContext = createContext();
 
@@ -38,7 +38,7 @@ export const IssueProvider = ({ children }) => {
   };
 
   const updateIssueStatus = (id, status) => {
-    setIssues(issues.map(issue => 
+    setIssues(issues.map(issue =>
       issue.id === id ? { ...issue, status } : issue
     ));
   };
