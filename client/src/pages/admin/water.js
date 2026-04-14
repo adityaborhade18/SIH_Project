@@ -48,6 +48,7 @@ import {
   WaterDrop
 } from '@mui/icons-material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { useIssues } from '../../context/IssueContext';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -55,14 +56,14 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-const statusOptions = ['Pending', 'In Process', 'Assigned', 'Solved', 'Rejected'];
+const statusOptions = ['Pending', 'In Progress', 'Assigned', 'Resolved', 'Rejected'];
 const priorityLevels = ['Low', 'Medium', 'High', 'Critical'];
 
 const statusColors = {
   'Pending': '#ff9800',
-  'In Process': '#2196f3',
+  'In Progress': '#2196f3',
   'Assigned': '#9c27b0',
-  'Solved': '#4caf50',
+  'Resolved': '#4caf50',
   'Rejected': '#f44336'
 };
 
@@ -156,6 +157,7 @@ const waterIcon = new L.Icon({
 });
 
 const WaterDashboard = ({ onLogout }) => {
+  const { updateIssueStatus } = useIssues();
   const [waterIssues, setWaterIssues] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -210,15 +212,36 @@ const WaterDashboard = ({ onLogout }) => {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('email');
 
-  const handleStatusChange = (id, newStatus) => {
-    showSnackbar('Status updated successfully', 'success');
+  const handleStatusChange = async (id, newStatus) => {
+    const success = await updateIssueStatus(id, newStatus);
+    if (success) {
+      setWaterIssues(prev => prev.map(issue =>
+        issue.id === id ? { ...issue, status: newStatus } : issue
+      ));
+      showSnackbar('Status updated successfully', 'success');
+    } else {
+      showSnackbar('Failed to update status', 'error');
+    }
   };
 
-  const handleBulkAction = () => {
+  const handleBulkAction = async () => {
     if (!bulkAction || selectedIssues.length === 0) return;
+
+    const results = await Promise.all(
+      selectedIssues.map(id => updateIssueStatus(id, bulkAction))
+    );
+
+    const successCount = results.filter(r => r).length;
+
+    if (successCount > 0) {
+      setWaterIssues(prev => prev.map(issue =>
+        selectedIssues.includes(issue.id) ? { ...issue, status: bulkAction } : issue
+      ));
+      showSnackbar(`Updated status for ${successCount} issues`, 'success');
+    }
+
     setShowBulkDialog(false);
     setSelectedIssues([]);
-    showSnackbar(`Updated status for ${selectedIssues.length} issues`, 'success');
   };
 
   const showSnackbar = (message, severity = 'success') => {
@@ -239,9 +262,9 @@ const WaterDashboard = ({ onLogout }) => {
   // Water department stats data
   const statusData = useMemo(() => [
     { name: 'Pending', value: waterIssues.filter(issue => issue.status === 'Pending').length },
-    { name: 'In Process', value: waterIssues.filter(issue => issue.status === 'In Process').length },
+    { name: 'In Progress', value: waterIssues.filter(issue => issue.status === 'In Progress').length },
     { name: 'Assigned', value: waterIssues.filter(issue => issue.status === 'Assigned').length },
-    { name: 'Solved', value: waterIssues.filter(issue => issue.status === 'Solved').length },
+    { name: 'Resolved', value: waterIssues.filter(issue => issue.status === 'Resolved').length },
     { name: 'Rejected', value: waterIssues.filter(issue => issue.status === 'Rejected').length },
   ], [waterIssues]);
 
@@ -256,8 +279,8 @@ const WaterDashboard = ({ onLogout }) => {
   const waterStats = [
     { title: 'Total Reports', value: waterIssues.length, icon: Warning, color: '#2196f3' },
     { title: 'Pending', value: waterIssues.filter(issue => issue.status === 'Pending').length, icon: PendingActions, color: '#ff9800' },
-    { title: 'In Progress', value: waterIssues.filter(issue => issue.status === 'In Process').length, icon: Build, color: '#9c27b0' },
-    { title: 'Resolved', value: waterIssues.filter(issue => issue.status === 'Solved').length, icon: CheckCircleOutline, color: '#4caf50' },
+    { title: 'In Progress', value: waterIssues.filter(issue => issue.status === 'In Progress').length, icon: Build, color: '#9c27b0' },
+    { title: 'Resolved', value: waterIssues.filter(issue => issue.status === 'Resolved').length, icon: CheckCircleOutline, color: '#4caf50' },
   ];
 
   return (
@@ -532,9 +555,9 @@ const WaterDashboard = ({ onLogout }) => {
                   label="Action"
                 >
                   <MenuItem value=""><em>Select an action</em></MenuItem>
-                  <MenuItem value="In Process">Mark as In Process</MenuItem>
+                  <MenuItem value="In Progress">Mark as In Progress</MenuItem>
                   <MenuItem value="Assigned">Assign to Team</MenuItem>
-                  <MenuItem value="Solved">Mark as Solved</MenuItem>
+                  <MenuItem value="Resolved">Mark as Resolved</MenuItem>
                   <MenuItem value="Rejected">Reject Selected</MenuItem>
                 </Select>
               </FormControl>
@@ -743,9 +766,9 @@ const WaterDashboard = ({ onLogout }) => {
               displayEmpty
             >
               <MenuItem value="">Select Action</MenuItem>
-              <MenuItem value="In Process">Mark as In Process</MenuItem>
+              <MenuItem value="In Progress">Mark as In Progress</MenuItem>
               <MenuItem value="Assigned">Assign to Team</MenuItem>
-              <MenuItem value="Solved">Mark as Solved</MenuItem>
+              <MenuItem value="Resolved">Mark as Resolved</MenuItem>
               <MenuItem value="Rejected">Reject Issues</MenuItem>
             </Select>
           </FormControl>

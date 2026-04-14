@@ -1,4 +1,5 @@
 import { createContext, useState, useContext } from 'react';
+import axios from 'axios';
 
 const IssueContext = createContext();
 
@@ -37,11 +38,22 @@ export const IssueProvider = ({ children }) => {
     return issue;
   };
 
-  const updateIssueStatus = (id, status) => {
-    setIssues(issues.map(issue =>
-      issue.id === id ? { ...issue, status } : issue
-    ));
+  const updateIssueStatus = async (id, status) => {
+    try {
+      const { data } = await axios.post('/api/user/update-status', { id, status });
+      if (data.success) {
+        // Update local state
+        setIssues(prevIssues => prevIssues.map(issue =>
+          (issue.id === id || issue._id === id) ? { ...issue, status } : issue
+        ));
+        return true;
+      }
+    } catch (error) {
+      console.error("Failed to update status", error);
+      return false;
+    }
   };
+
 
   return (
     <IssueContext.Provider value={{ issues, addIssue, updateIssueStatus }}>

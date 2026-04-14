@@ -91,15 +91,15 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-const statusOptions = ['Pending', 'In Process', 'Assigned', 'Solved', 'Rejected'];
+const statusOptions = ['Pending', 'In Progress', 'Assigned', 'Resolved', 'Rejected'];
 const priorityLevels = ['Low', 'Medium', 'High', 'Critical'];
 const departments = ['Sanitation', 'Public Health', 'Roads & Transport', 'Water Supply & Sewerage', 'Electricity & Street Lighting'];
 
 const statusColors = {
   'Pending': '#ff9800',
-  'In Process': '#2196f3',
+  'In Progress': '#2196f3',
   'Assigned': '#9c27b0',
-  'Solved': '#4caf50',
+  'Resolved': '#4caf50',
   'Rejected': '#f44336'
 };
 
@@ -252,9 +252,13 @@ const AdminDashboard = () => {
   }, [issues, filters, sortModel]);
 
   // Handle status change for single issue
-  const handleStatusChange = (id, newStatus) => {
-    updateIssueStatus(id, newStatus);
-    showSnackbar('Status updated successfully', 'success');
+  const handleStatusChange = async (id, newStatus) => {
+    const success = await updateIssueStatus(id, newStatus);
+    if (success) {
+      showSnackbar('Status updated successfully', 'success');
+    } else {
+      showSnackbar('Failed to update status', 'error');
+    }
   };
 
   // Handle bulk actions
@@ -304,9 +308,9 @@ const AdminDashboard = () => {
 
   const statusData = React.useMemo(() => [
     { name: 'Pending', value: issues.filter(issue => issue.status === 'Pending').length },
-    { name: 'In Process', value: issues.filter(issue => issue.status === 'In Process').length },
+    { name: 'In Progress', value: issues.filter(issue => issue.status === 'In Progress').length },
     { name: 'Assigned', value: issues.filter(issue => issue.status === 'Assigned').length },
-    { name: 'Solved', value: issues.filter(issue => issue.status === 'Solved').length },
+    { name: 'Resolved', value: issues.filter(issue => issue.status === 'Resolved').length },
     { name: 'Rejected', value: issues.filter(issue => issue.status === 'Rejected').length },
   ], [issues]);
 
@@ -481,7 +485,7 @@ const AdminDashboard = () => {
     },
     {
       title: 'In Progress',
-      value: issues.filter(issue => issue.status === 'In Process').length,
+      value: issues.filter(issue => issue.status === 'In Progress').length,
       icon: Build,
       color: '#2196f3',
       trend: '+8%',
@@ -489,7 +493,7 @@ const AdminDashboard = () => {
     },
     {
       title: 'Resolved',
-      value: issues.filter(issue => issue.status === 'Solved').length,
+      value: issues.filter(issue => issue.status === 'Resolved').length,
       icon: CheckCircleOutline,
       color: '#4caf50',
       trend: '+15%',

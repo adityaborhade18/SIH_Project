@@ -91,15 +91,15 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
-const statusOptions = ['Pending', 'In Process', 'Assigned', 'Solved', 'Rejected'];
+const statusOptions = ['Pending', 'In Progress', 'Assigned', 'Resolved', 'Rejected'];
 const priorityLevels = ['Low', 'Medium', 'High', 'Critical'];
 const department = 'Electricity'; // Single department focus
 
 const statusColors = {
   'Pending': '#ff9800',
-  'In Process': '#2196f3',
+  'In Progress': '#2196f3',
   'Assigned': '#9c27b0',
-  'Solved': '#4caf50',
+  'Resolved': '#4caf50',
   'Rejected': '#f44336'
 };
 
@@ -218,22 +218,37 @@ const Electricitydepartment = ({ onLogout }) => {
   }, [electricityIssues, filters, sortModel]);
 
   // Handle status change for single issue
-  const handleStatusChange = (id, newStatus) => {
-    updateIssueStatus(id, newStatus);
-    showSnackbar('Status updated successfully', 'success');
+  const handleStatusChange = async (id, newStatus) => {
+    const success = await updateIssueStatus(id, newStatus);
+    if (success) {
+      setElectricityIssues(prev => prev.map(issue =>
+        issue.id === id ? { ...issue, status: newStatus } : issue
+      ));
+      showSnackbar('Status updated successfully', 'success');
+    } else {
+      showSnackbar('Failed to update status', 'error');
+    }
   };
 
   // Handle bulk actions
-  const handleBulkAction = () => {
+  const handleBulkAction = async () => {
     if (!bulkAction || selectedIssues.length === 0) return;
 
-    selectedIssues.forEach(id => {
-      updateIssueStatus(id, bulkAction);
-    });
+    const results = await Promise.all(
+      selectedIssues.map(id => updateIssueStatus(id, bulkAction))
+    );
+
+    const successCount = results.filter(r => r).length;
+
+    if (successCount > 0) {
+      setElectricityIssues(prev => prev.map(issue =>
+        selectedIssues.includes(issue.id) ? { ...issue, status: bulkAction } : issue
+      ));
+      showSnackbar(`Updated status for ${successCount} issues`, 'success');
+    }
 
     setShowBulkDialog(false);
     setSelectedIssues([]);
-    showSnackbar(`Updated status for ${selectedIssues.length} issues`, 'success');
   };
 
   // Show snackbar notification
@@ -269,9 +284,9 @@ const Electricitydepartment = ({ onLogout }) => {
 
   const statusData = React.useMemo(() => [
     { name: 'Pending', value: electricityIssues.filter(issue => issue.status === 'Pending').length },
-    { name: 'In Process', value: electricityIssues.filter(issue => issue.status === 'In Process').length },
+    { name: 'In Progress', value: electricityIssues.filter(issue => issue.status === 'In Progress').length },
     { name: 'Assigned', value: electricityIssues.filter(issue => issue.status === 'Assigned').length },
-    { name: 'Solved', value: electricityIssues.filter(issue => issue.status === 'Solved').length },
+    { name: 'Resolved', value: electricityIssues.filter(issue => issue.status === 'Resolved').length },
     { name: 'Rejected', value: electricityIssues.filter(issue => issue.status === 'Rejected').length },
   ], [electricityIssues]);
 
@@ -420,7 +435,7 @@ const Electricitydepartment = ({ onLogout }) => {
     },
     {
       title: 'In Progress',
-      value: electricityIssues.filter(issue => issue.status === 'In Process').length,
+      value: electricityIssues.filter(issue => issue.status === 'In Progress').length,
       icon: Build,
       color: '#2196f3',
       trend: '+8%',
@@ -428,7 +443,7 @@ const Electricitydepartment = ({ onLogout }) => {
     },
     {
       title: 'Resolved',
-      value: electricityIssues.filter(issue => issue.status === 'Solved').length,
+      value: electricityIssues.filter(issue => issue.status === 'Resolved').length,
       icon: CheckCircleOutline,
       color: '#4caf50',
       trend: '+15%',
@@ -661,7 +676,7 @@ const Electricitydepartment = ({ onLogout }) => {
                 In Progress
               </Typography>
               <Typography variant="h4" color="#2196f3">
-                {electricityIssues.filter(issue => issue.status === 'In Process').length}
+                {electricityIssues.filter(issue => issue.status === 'In Progress').length}
               </Typography>
             </CardContent>
           </Card>
@@ -671,7 +686,7 @@ const Electricitydepartment = ({ onLogout }) => {
                 Resolved
               </Typography>
               <Typography variant="h4" color="#4caf50">
-                {electricityIssues.filter(issue => issue.status === 'Solved').length}
+                {electricityIssues.filter(issue => issue.status === 'Resolved').length}
               </Typography>
             </CardContent>
           </Card>

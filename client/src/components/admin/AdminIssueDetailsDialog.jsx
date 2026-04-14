@@ -12,13 +12,13 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 
-const statusOptions = ['Pending', 'In Process', 'Assigned', 'Solved', 'Rejected'];
+const statusOptions = ['Pending', 'In Progress', 'Assigned', 'Resolved', 'Rejected'];
 
 const statusColors = {
     'Pending': 'warning',
-    'In Process': 'info',
+    'In Progress': 'info',
     'Assigned': 'secondary',
-    'Solved': 'success',
+    'Resolved': 'success',
     'Rejected': 'error'
 };
 

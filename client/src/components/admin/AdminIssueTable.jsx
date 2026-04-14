@@ -9,13 +9,13 @@ const AdminIssueTable = ({ issues, onViewDetails }) => {
     const [page, setPage] = useState(1);
     const itemsPerPage = 7;
 
-    const statuses = ['All', 'Pending', 'In Process', 'Resolved', 'Rejected'];
+    const statuses = ['All', 'Pending', 'In Progress', 'Resolved', 'Rejected'];
     const priorities = ['All', 'Low', 'Medium', 'High', 'Critical'];
 
     const getStatusStyles = (status) => {
         switch (status?.toLowerCase()) {
             case 'pending': return 'bg-orange-100 text-orange-800';
-            case 'in process': return 'bg-blue-100 text-blue-800';
+            case 'in progress': return 'bg-blue-100 text-blue-800';
             case 'assigned': return 'bg-purple-100 text-purple-800';
             case 'solved':
             case 'resolved': return 'bg-green-100 text-green-800';

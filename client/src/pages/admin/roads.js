@@ -60,18 +60,19 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useIssues } from '../../context/IssueContext';
 
 import AdminIssueTable from '../../components/admin/AdminIssueTable';
 import AdminIssueDetailsDialog from '../../components/admin/AdminIssueDetailsDialog';
 
-const statusOptions = ['Pending', 'In Process', 'Assigned', 'Solved', 'Rejected'];
+const statusOptions = ['Pending', 'In Progress', 'Assigned', 'Resolved', 'Rejected'];
 const priorityLevels = ['Low', 'Medium', 'High', 'Critical'];
 
 const statusColors = {
   'Pending': '#ff9800',
-  'In Process': '#2196f3',
+  'In Progress': '#2196f3',
   'Assigned': '#9c27b0',
-  'Solved': '#4caf50',
+  'Resolved': '#4caf50',
   'Rejected': '#f44336'
 };
 
@@ -165,6 +166,7 @@ const roadsIcon = new L.Icon({
 });
 
 const RoadsTransportDashboard = ({ onLogout }) => {
+  const { updateIssueStatus } = useIssues();
   const [roadsIssues, setRoadsIssues] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -242,15 +244,36 @@ const RoadsTransportDashboard = ({ onLogout }) => {
     });
   }, [roadsIssues, filters]);
 
-  const handleStatusChange = (id, newStatus) => {
-    showSnackbar('Status updated successfully', 'success');
+  const handleStatusChange = async (id, newStatus) => {
+    const success = await updateIssueStatus(id, newStatus);
+    if (success) {
+      setRoadsIssues(prev => prev.map(issue =>
+        issue.id === id ? { ...issue, status: newStatus } : issue
+      ));
+      showSnackbar('Status updated successfully', 'success');
+    } else {
+      showSnackbar('Failed to update status', 'error');
+    }
   };
 
-  const handleBulkAction = () => {
+  const handleBulkAction = async () => {
     if (!bulkAction || selectedIssues.length === 0) return;
+
+    const results = await Promise.all(
+      selectedIssues.map(id => updateIssueStatus(id, bulkAction))
+    );
+
+    const successCount = results.filter(r => r).length;
+
+    if (successCount > 0) {
+      setRoadsIssues(prev => prev.map(issue =>
+        selectedIssues.includes(issue.id) ? { ...issue, status: bulkAction } : issue
+      ));
+      showSnackbar(`Updated status for ${successCount} issues`, 'success');
+    }
+
     setShowBulkDialog(false);
     setSelectedIssues([]);
-    showSnackbar(`Updated status for ${selectedIssues.length} issues`, 'success');
   };
 
   const showSnackbar = (message, severity = 'success') => {
@@ -271,9 +294,9 @@ const RoadsTransportDashboard = ({ onLogout }) => {
   // Roads department stats data
   const statusData = useMemo(() => [
     { name: 'Pending', value: roadsIssues.filter(issue => issue.status === 'Pending').length },
-    { name: 'In Process', value: roadsIssues.filter(issue => issue.status === 'In Process').length },
+    { name: 'In Progress', value: roadsIssues.filter(issue => issue.status === 'In Progress').length },
     { name: 'Assigned', value: roadsIssues.filter(issue => issue.status === 'Assigned').length },
-    { name: 'Solved', value: roadsIssues.filter(issue => issue.status === 'Solved').length },
+    { name: 'Resolved', value: roadsIssues.filter(issue => issue.status === 'Resolved').length },
     { name: 'Rejected', value: roadsIssues.filter(issue => issue.status === 'Rejected').length },
   ], [roadsIssues]);
 
@@ -360,8 +383,8 @@ const RoadsTransportDashboard = ({ onLogout }) => {
   const roadsStats = [
     { title: 'Total Reports', value: roadsIssues.length, icon: Warning, color: '#ff5722' },
     { title: 'Pending', value: roadsIssues.filter(issue => issue.status === 'Pending').length, icon: PendingActions, color: '#ff9800' },
-    { title: 'In Progress', value: roadsIssues.filter(issue => issue.status === 'In Process').length, icon: Build, color: '#2196f3' },
-    { title: 'Resolved', value: roadsIssues.filter(issue => issue.status === 'Solved').length, icon: CheckCircleOutline, color: '#4caf50' },
+    { title: 'In Progress', value: roadsIssues.filter(issue => issue.status === 'In Progress').length, icon: Build, color: '#2196f3' },
+    { title: 'Resolved', value: roadsIssues.filter(issue => issue.status === 'Resolved').length, icon: CheckCircleOutline, color: '#4caf50' },
   ];
 
   return (

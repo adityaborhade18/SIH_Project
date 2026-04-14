@@ -58,6 +58,7 @@ import {
 } from '@mui/icons-material';
 // import { DataGrid } from '@mui/x-data-grid'; // Removed
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { useIssues } from '../../context/IssueContext';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -65,14 +66,14 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-const statusOptions = ['Pending', 'In Process', 'Assigned', 'Solved', 'Rejected'];
+const statusOptions = ['Pending', 'In Progress', 'Assigned', 'Resolved', 'Rejected'];
 const priorityLevels = ['Low', 'Medium', 'High', 'Critical'];
 
 const statusColors = {
   'Pending': '#ff9800',
-  'In Process': '#2196f3',
+  'In Progress': '#2196f3',
   'Assigned': '#9c27b0',
-  'Solved': '#4caf50',
+  'Resolved': '#4caf50',
   'Rejected': '#f44336'
 };
 
@@ -166,6 +167,7 @@ const healthIcon = new L.Icon({
 });
 
 const HealthDashboard = ({ onLogout }) => {
+  const { updateIssueStatus } = useIssues();
   const [healthIssues, setHealthIssues] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -222,16 +224,36 @@ const HealthDashboard = ({ onLogout }) => {
 
 
 
-  const handleStatusChange = (id, newStatus) => {
-    // In a real app you'd call an API here.
-    showSnackbar('Status updated successfully', 'success');
+  const handleStatusChange = async (id, newStatus) => {
+    const success = await updateIssueStatus(id, newStatus);
+    if (success) {
+      setHealthIssues(prev => prev.map(issue =>
+        issue.id === id ? { ...issue, status: newStatus } : issue
+      ));
+      showSnackbar('Status updated successfully', 'success');
+    } else {
+      showSnackbar('Failed to update status', 'error');
+    }
   };
 
-  const handleBulkAction = () => {
+  const handleBulkAction = async () => {
     if (!bulkAction || selectedIssues.length === 0) return;
+
+    const results = await Promise.all(
+      selectedIssues.map(id => updateIssueStatus(id, bulkAction))
+    );
+
+    const successCount = results.filter(r => r).length;
+
+    if (successCount > 0) {
+      setHealthIssues(prev => prev.map(issue =>
+        selectedIssues.includes(issue.id) ? { ...issue, status: bulkAction } : issue
+      ));
+      showSnackbar(`Updated status for ${successCount} issues`, 'success');
+    }
+
     setShowBulkDialog(false);
     setSelectedIssues([]);
-    showSnackbar(`Updated status for ${selectedIssues.length} issues`, 'success');
   };
 
   const showSnackbar = (message, severity = 'success') => {
@@ -252,9 +274,9 @@ const HealthDashboard = ({ onLogout }) => {
   // Health department stats data
   const statusData = useMemo(() => [
     { name: 'Pending', value: healthIssues.filter(issue => issue.status === 'Pending').length },
-    { name: 'In Process', value: healthIssues.filter(issue => issue.status === 'In Process').length },
+    { name: 'In Progress', value: healthIssues.filter(issue => issue.status === 'In Progress').length },
     { name: 'Assigned', value: healthIssues.filter(issue => issue.status === 'Assigned').length },
-    { name: 'Solved', value: healthIssues.filter(issue => issue.status === 'Solved').length },
+    { name: 'Resolved', value: healthIssues.filter(issue => issue.status === 'Resolved').length },
     { name: 'Rejected', value: healthIssues.filter(issue => issue.status === 'Rejected').length },
   ], [healthIssues]);
 
@@ -273,8 +295,8 @@ const HealthDashboard = ({ onLogout }) => {
   const healthStats = [
     { title: 'Total Reports', value: healthIssues.length, icon: Warning, color: '#d32f2f' },
     { title: 'Pending', value: healthIssues.filter(issue => issue.status === 'Pending').length, icon: PendingActions, color: '#ff9800' },
-    { title: 'In Progress', value: healthIssues.filter(issue => issue.status === 'In Process').length, icon: Build, color: '#2196f3' },
-    { title: 'Resolved', value: healthIssues.filter(issue => issue.status === 'Solved').length, icon: CheckCircleOutline, color: '#4caf50' },
+    { title: 'In Progress', value: healthIssues.filter(issue => issue.status === 'In Progress').length, icon: Build, color: '#2196f3' },
+    { title: 'Resolved', value: healthIssues.filter(issue => issue.status === 'Resolved').length, icon: CheckCircleOutline, color: '#4caf50' },
   ];
 
   return (
@@ -534,9 +556,9 @@ const HealthDashboard = ({ onLogout }) => {
                   label="Action"
                 >
                   <MenuItem value=""><em>Select an action</em></MenuItem>
-                  <MenuItem value="In Process">Mark as In Process</MenuItem>
+                  <MenuItem value="In Progress">Mark as In Progress</MenuItem>
                   <MenuItem value="Assigned">Assign to Team</MenuItem>
-                  <MenuItem value="Solved">Mark as Solved</MenuItem>
+                  <MenuItem value="Resolved">Mark as Resolved</MenuItem>
                   <MenuItem value="Rejected">Reject Selected</MenuItem>
                 </Select>
               </FormControl>
@@ -778,9 +800,9 @@ const HealthDashboard = ({ onLogout }) => {
               displayEmpty
             >
               <MenuItem value="">Select Action</MenuItem>
-              <MenuItem value="In Process">Mark as In Process</MenuItem>
+              <MenuItem value="In Progress">Mark as In Progress</MenuItem>
               <MenuItem value="Assigned">Assign to Health Team</MenuItem>
-              <MenuItem value="Solved">Mark as Solved</MenuItem>
+              <MenuItem value="Resolved">Mark as Resolved</MenuItem>
               <MenuItem value="Rejected">Reject Issues</MenuItem>
             </Select>
           </FormControl>
