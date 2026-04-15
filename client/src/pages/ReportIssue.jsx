@@ -26,6 +26,7 @@ L.Marker.prototype.options.icon = DefaultIcon;
 export default function ReportIssue() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const isOffline = !navigator.onLine;
 
   const [formData, setFormData] = useState({
     title: "",
@@ -35,6 +36,8 @@ export default function ReportIssue() {
     imagePreview: null,
     position: null,
     address: "",
+    area: "",
+
   });
 
   const [errors, setErrors] = useState({});
@@ -42,6 +45,12 @@ export default function ReportIssue() {
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState(null);
   const [openCamera, setOpenCamera] = useState(false);
+  const [nearbyIssues, setNearbyIssues] = useState([]);
+  const [existingIssue, setExistingIssue] = useState(null);
+
+  useEffect(() => {
+    console.log("Nearby Issues:", nearbyIssues);
+  }, [nearbyIssues]);
 
 
   // Check if user is authenticated on mount
@@ -57,6 +66,48 @@ export default function ReportIssue() {
   useEffect(() => {
     checkPermissionStatus();
     detectCurrentLocation();
+  }, []);
+
+  useEffect(() => {
+    const syncOfflineIssues = async () => {
+      const stored =
+        JSON.parse(localStorage.getItem("offlineIssues")) || [];
+
+      if (stored.length === 0) return;
+
+      const token = localStorage.getItem("token");
+
+      for (let issue of stored) {
+        try {
+          await axios.post(
+            "/api/user/createissue",
+            {
+              title: issue.title,
+              description: issue.description,
+              priority: issue.priority,
+              location: JSON.stringify(issue.location),
+              imageBase64: issue.imageBase64
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            }
+          );
+        } catch (err) {
+          console.log("Sync failed", err);
+          return; // stop if one fails
+        }
+      }
+
+      localStorage.removeItem("offlineIssues");
+      toast.success("Offline issues synced 🚀");
+    };
+
+    window.addEventListener("online", syncOfflineIssues);
+
+    return () =>
+      window.removeEventListener("online", syncOfflineIssues);
   }, []);
 
   const checkPermissionStatus = async () => {
@@ -93,6 +144,26 @@ export default function ReportIssue() {
       async (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
+
+        // 🔥 FETCH NEARBY ISSUES
+        try {
+          const token = localStorage.getItem("token");
+
+          const resIssues = await axios.get(
+            `/api/user/nearby?lng=${lng}&lat=${lat}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            }
+          );
+
+          setNearbyIssues(resIssues.data);
+          console.log("Nearby Issues:", resIssues.data);
+
+        } catch (err) {
+          console.log("Nearby fetch error", err);
+        }
 
         try {
           const res = await fetch(
@@ -191,11 +262,75 @@ export default function ReportIssue() {
     if (!formData.description.trim())
       newErrors.description = "Description is required";
     if (!formData.image) newErrors.image = "Image is required";
-    if (!formData.position) newErrors.position = "Please select a location";
+    //  if (!formData.position) newErrors.position = "Please select a location";
+    if (!formData.position && !formData.address) {
+      newErrors.position = "Provide location (GPS or manual address)";
+    }
 
     setErrors(newErrors);
 
     return Object.keys(newErrors).length === 0;
+  };
+
+  const checkDuplicate = () => {
+    return nearbyIssues.find(issue =>
+      issue.title.toLowerCase().includes(formData.title.toLowerCase())
+    );
+  };
+
+  const saveOfflineIssue = async () => {
+    try {
+      // convert image → base64
+      const toBase64 = (file) =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+        });
+
+      const base64Image = await toBase64(formData.image);
+
+      const offlineIssue = {
+        title: formData.title,
+        description: formData.description,
+        priority: formData.priority,
+        // location: {
+
+        //   type: "Point",
+        //   coordinates: [
+        //     formData.position[1],
+        //     formData.position[0]
+        //   ],
+        //   address: formData.address
+        // },
+        location: formData.position
+          ? {
+            type: "Point",
+            coordinates: [
+              formData.position[1],
+              formData.position[0]
+            ],
+            address: formData.address
+          }
+          : null,
+        address: formData.address,
+        imageBase64: base64Image,
+        createdAt: Date.now()
+      };
+
+      const existing =
+        JSON.parse(localStorage.getItem("offlineIssues")) || [];
+
+      existing.push(offlineIssue);
+
+      localStorage.setItem("offlineIssues", JSON.stringify(existing));
+
+      toast.success("Saved offline 📦");
+
+    } catch (err) {
+      console.log("Offline save error", err);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -207,6 +342,7 @@ export default function ReportIssue() {
       return;
     }
 
+
     // Check if user is authenticated
     const token = localStorage.getItem('token');
     if (!token) {
@@ -216,16 +352,34 @@ export default function ReportIssue() {
       return;
     }
 
+    // 🔴 OFFLINE CHECK
+    if (!navigator.onLine) {
+      await saveOfflineIssue();
+      setLoading(false);
+      return;
+    }
+
     try {
       // Build location object in correct format
-      const locationObject = {
-        type: "Point",
-        coordinates: [
-          formData.position[1], // lng FIRST
-          formData.position[0]  // lat SECOND
-        ],
-        address: formData.address,
-      };
+      // const locationObject = {
+      //   type: "Point",
+      //   coordinates: [
+      //     formData.position[1], // lng FIRST
+      //     formData.position[0]  // lat SECOND
+      //   ],
+      //   address: formData.address,
+      // };
+
+      const locationObject = formData.position
+        ? {
+          type: "Point",
+          coordinates: [
+            formData.position[1],
+            formData.position[0]
+          ],
+          address: formData.address,
+        }
+        : null;
 
       const form = new FormData();
       form.append("title", formData.title);
@@ -233,7 +387,14 @@ export default function ReportIssue() {
       form.append("priority", formData.priority);
 
       // Must send as string because backend parses JSON
-      form.append("location", JSON.stringify(locationObject));
+      // form.append("location", JSON.stringify(locationObject));
+      if (locationObject) {
+        form.append("location", JSON.stringify(locationObject));
+      }
+
+      if (formData.address) {
+        form.append("address", formData.address);
+      }
 
       if (formData.image) {
         form.append("image", formData.image);
@@ -299,6 +460,8 @@ export default function ReportIssue() {
 
     setErrors(prev => ({ ...prev, image: null }));
   };
+
+
 
 
 
@@ -430,7 +593,7 @@ export default function ReportIssue() {
                   type="button"
                   onClick={detectCurrentLocation}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                  disabled={loadingLocation}
+                  disabled={loadingLocation || isOffline}
                 >
                   {loadingLocation ? '⏳ Detecting...' : '📍 Detect Current Location'}
                 </button>
@@ -500,7 +663,23 @@ export default function ReportIssue() {
                   </p>
                 </div>
               )}
-
+              {isOffline && (
+                <div>
+                  <label className="font-semibold">Enter Location (Offline Mode) *</label>
+                  <input
+                    type="text"
+                    className="w-full mt-1 border rounded-lg p-3"
+                    placeholder="Enter your area / address"
+                    value={formData.address}
+                    onChange={(e) =>
+                      setFormData({ ...formData, address: e.target.value })
+                    }
+                  />
+                  <p className="text-sm text-yellow-600 mt-1">
+                    ⚠️ Offline mode: Please enter your address manually
+                  </p>
+                </div>
+              )}
               {/* Address Box */}
               <div>
                 <label className="font-semibold block mb-1">Selected Address</label>
@@ -512,6 +691,7 @@ export default function ReportIssue() {
                   )}
                 </div>
               </div>
+
 
               {/* Map */}
               <div className="h-[400px] rounded-xl overflow-hidden border relative z-10">

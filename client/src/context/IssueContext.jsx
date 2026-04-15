@@ -38,13 +38,30 @@ export const IssueProvider = ({ children }) => {
     return issue;
   };
 
-  const updateIssueStatus = async (id, status) => {
+  const updateIssueStatus = async (id, status, proofImage = null) => {
     try {
-      const { data } = await axios.post('/api/user/update-status', { id, status });
+      let data;
+      if (proofImage) {
+        const formData = new FormData();
+        formData.append("id", id);
+        formData.append("status", status);
+        formData.append("proofImage", proofImage);
+        
+        const res = await axios.post('/api/user/update-status', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        data = res.data;
+      } else {
+        const res = await axios.post('/api/user/update-status', { id, status });
+        data = res.data;
+      }
+
       if (data.success) {
         // Update local state
         setIssues(prevIssues => prevIssues.map(issue =>
-          (issue.id === id || issue._id === id) ? { ...issue, status } : issue
+          (issue.id === id || issue._id === id) 
+            ? { ...issue, status, proofImage: data.issue?.proofImage } 
+            : issue
         ));
         return true;
       }
@@ -53,7 +70,6 @@ export const IssueProvider = ({ children }) => {
       return false;
     }
   };
-
 
   return (
     <IssueContext.Provider value={{ issues, addIssue, updateIssueStatus }}>

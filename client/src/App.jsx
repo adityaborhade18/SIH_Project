@@ -25,6 +25,7 @@ import RoaddepartmentDashboard from './pages/admin/roads';
 import Waterdepartment from './pages/admin/water';
 import Electricitydepartment from './pages/admin/electricity';
 import AdminLogin from './pages/admin/AdminLogin';
+import MapView from './pages/MapView';
 
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -63,6 +64,7 @@ function App() {
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/loginn" element={<Loginn />} />
+              <Route path="/map" element={<MapView />} />
 
               {/* Protected Routes */}
               <Route

@@ -29,6 +29,7 @@ const AdminIssueDetailsDialog = ({ open, onClose, issue, onStatusUpdate }) => {
     const [copySuccess, setCopySuccess] = useState('');
     const [currentStatus, setCurrentStatus] = useState(issue?.status);
     const [loadingLocation, setLoadingLocation] = useState(false);
+    const [proofImage, setProofImage] = useState(null);
 
     useEffect(() => {
         if (issue) setCurrentStatus(issue.status);
@@ -102,7 +103,9 @@ const AdminIssueDetailsDialog = ({ open, onClose, issue, onStatusUpdate }) => {
 
     const handleStatusClick = (newStatus) => {
         setCurrentStatus(newStatus);
-        if (onStatusUpdate) onStatusUpdate(issue.id, newStatus);
+        if (newStatus !== 'Resolved') {
+            if (onStatusUpdate) onStatusUpdate(issue.id, newStatus);
+        }
     };
 
     if (!issue) return null;
@@ -238,6 +241,28 @@ const AdminIssueDetailsDialog = ({ open, onClose, issue, onStatusUpdate }) => {
                                     />
                                 ))}
                             </Box>
+
+                            {currentStatus === "Resolved" && (
+                                <Box sx={{ mt: 3, p: 2, border: '1px dashed #ccc', borderRadius: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <Typography variant="body2" color="text.secondary">Upload Resolution Proof</Typography>
+                                    <input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        onChange={(e) => setProofImage(e.target.files[0])}
+                                    />
+                                    <Button 
+                                        variant="contained" 
+                                        color="success" 
+                                        onClick={() => {
+                                            if (onStatusUpdate) onStatusUpdate(issue.id, "Resolved", proofImage);
+                                        }}
+                                        size="small"
+                                        sx={{ alignSelf: 'flex-start' }}
+                                    >
+                                        Submit Resolution
+                                    </Button>
+                                </Box>
+                            )}
                         </Paper>
 
                         {/* Attached Image */}

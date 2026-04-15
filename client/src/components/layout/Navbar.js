@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Menu, X, User, LogOut, Home, FileText, Search, Info, Mail } from 'lucide-react';
+import { Menu, X, User, LogOut, Home, FileText, Search, Info, Mail, Map } from 'lucide-react';
 import { AuthContext } from '../../context/AuthContext';
 
 const Navbar = () => {
@@ -11,6 +11,7 @@ const Navbar = () => {
         { name: 'Track Issue', path: '/track-issue', icon: Search },
         { name: 'About', path: '/about', icon: Info },
         { name: 'Contact', path: '/contact', icon: Mail },
+        { name: 'Map View', path: '/map', icon: Map }
     ];
 
     const navigate = useNavigate();

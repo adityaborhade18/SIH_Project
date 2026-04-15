@@ -5,6 +5,9 @@ import toast from 'react-hot-toast';
 
 import AdminIssueTable from '../../components/admin/AdminIssueTable';
 import AdminIssueDetailsDialog from '../../components/admin/AdminIssueDetailsDialog';
+import MarkerClusterGroup from "react-leaflet-cluster";
+import "leaflet.heat";
+import { useMap } from "react-leaflet";
 
 import {
   Box,
@@ -292,6 +295,20 @@ const categoryIcons = {
   }),
 };
 
+const getPriorityIcon = (priority) => {
+  let color = "green";
+
+  if (priority === "High") color = "red";
+  else if (priority === "Medium") color = "orange";
+  else if (priority === "Critical") color = "violet";
+
+  return new L.Icon({
+    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${color}.png`,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+  });
+};
+
 const SanitationDashboard = ({ onLogout }) => {
   const navigate = useNavigate();
   const theme = useTheme();
@@ -304,6 +321,7 @@ const SanitationDashboard = ({ onLogout }) => {
     try {
       setLoading(true);
       const { data } = await axios.get('/api/user/getallissue?department=Sanitation');
+      console.log("issuee.....", data);
       if (data.success) {
         const mappedIssues = data.issues.map(issue => ({
           id: issue._id,
@@ -357,8 +375,8 @@ const SanitationDashboard = ({ onLogout }) => {
 
 
   // Handle status change for single issue
-  const handleStatusChange = async (id, newStatus) => {
-    const success = await updateIssueStatus(id, newStatus);
+  const handleStatusChange = async (id, newStatus, proofImage) => {
+    const success = await updateIssueStatus(id, newStatus, proofImage);
     if (success) {
       setSanitationIssues(prev => prev.map(issue =>
         issue.id === id ? { ...issue, status: newStatus } : issue
@@ -431,7 +449,37 @@ const SanitationDashboard = ({ onLogout }) => {
 
   // Columns configuration
 
+  const HeatmapLayer = ({ issues }) => {
+    const map = useMap();
 
+    useEffect(() => {
+      if (!issues.length) return;
+
+      const L = require("leaflet");
+
+      const heatData = issues
+        .filter(i => i.location?.coordinates?.length === 2)
+        .map(i => [
+          i.location.coordinates[1], // lat
+          i.location.coordinates[0], // lng
+          1
+        ]);
+
+      const heat = L.heatLayer(heatData, {
+        radius: 25,
+        blur: 15,
+        maxZoom: 17,
+      });
+
+      heat.addTo(map);
+
+      return () => {
+        map.removeLayer(heat);
+      };
+    }, [issues, map]);
+
+    return null;
+  };
   // Render the component
   return (
     <Box sx={{ p: 3, py: 8 }}>
@@ -717,8 +765,8 @@ const SanitationDashboard = ({ onLogout }) => {
             open={showIssueDetails}
             onClose={() => setShowIssueDetails(false)}
             issue={selectedIssue}
-            onStatusUpdate={(id, newStatus) => {
-              handleStatusChange(id, newStatus);
+            onStatusUpdate={(id, newStatus, proofImage) => {
+              handleStatusChange(id, newStatus, proofImage);
               setSelectedIssue({ ...selectedIssue, status: newStatus });
             }}
           />
@@ -861,7 +909,7 @@ const SanitationDashboard = ({ onLogout }) => {
         <Paper sx={{ p: 3, height: '70vh', minHeight: 500 }}>
           <Typography variant="h6" gutterBottom>Interactive Map View (Pune)</Typography>
           <Box sx={{ width: '100%', height: '60vh', position: 'relative', borderRadius: 2, overflow: 'hidden', boxShadow: 1 }}>
-            <MapContainer center={[18.5204, 73.8567]} zoom={12} style={{ width: '100%', height: '100%' }} scrollWheelZoom={true}>
+            {/* <MapContainer center={[18.5204, 73.8567]} zoom={12} style={{ width: '100%', height: '100%' }} scrollWheelZoom={true}>
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -875,6 +923,69 @@ const SanitationDashboard = ({ onLogout }) => {
                   </Popup>
                 </Marker>
               ))}
+              
+
+            </MapContainer> */}
+
+
+            <MapContainer
+              center={
+                sanitationIssues.length > 0
+                  ? [
+                    sanitationIssues[0].location.coordinates[1],
+                    sanitationIssues[0].location.coordinates[0],
+                  ]
+                  : [18.5204, 73.8567]
+              }
+              zoom={12}
+              style={{ width: '100%', height: '100%' }}
+            >
+              <TileLayer
+                attribution='&copy; OpenStreetMap contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+
+              {/* 🔥 HEATMAP */}
+              <HeatmapLayer issues={sanitationIssues} />
+
+              {/* 🔥 CLUSTER GROUP */}
+              <MarkerClusterGroup>
+                {sanitationIssues.map((issue) => {
+                  const coords = issue.location.coordinates;
+
+                  if (!coords || coords.length !== 2) return null;
+
+                  const position = [coords[1], coords[0]];
+
+                  return (
+                    <Marker
+                      key={issue.id}
+                      position={position}
+                      icon={getPriorityIcon(issue.priority)}
+                    >
+                      <Popup>
+                        <Typography variant="subtitle2">{issue.title}</Typography>
+
+                        <Typography variant="body2" color="text.secondary">
+                          {issue.description}
+                        </Typography>
+
+                        <Typography variant="caption" display="block">
+                          📍 {issue.location.address}
+                        </Typography>
+
+                        <Typography variant="caption" display="block">
+                          Status: {issue.status}
+                        </Typography>
+
+                        <Typography variant="caption" display="block">
+                          Priority: {issue.priority}
+                        </Typography>
+                      </Popup>
+                    </Marker>
+                  );
+                })}
+              </MarkerClusterGroup>
             </MapContainer>
           </Box>
           <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>

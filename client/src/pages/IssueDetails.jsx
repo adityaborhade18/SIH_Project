@@ -29,6 +29,45 @@ import {
 } from "@mui/icons-material";
 import { format } from "date-fns";
 
+const BeforeAfterSlider = ({ beforeImage, afterImage }) => {
+  const [sliderPos, setSliderPos] = useState(50);
+  return (
+    <Box sx={{ position: 'relative', width: '100%', height: 400, overflow: 'hidden', borderRadius: 2 }}>
+      <img src={afterImage} alt="After" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', top: 0, left: 0 }} />
+      <img
+        src={beforeImage}
+        alt="Before"
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)`
+        }}
+      />
+      <input
+        type="range" min="0" max="100" value={sliderPos} onChange={(e) => setSliderPos(e.target.value)}
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'col-resize', zIndex: 10 }}
+      />
+      <Box sx={{
+        position: 'absolute', top: 0, bottom: 0, left: `${sliderPos}%`, width: 3, bgcolor: 'white', transform: 'translateX(-50%)', zIndex: 5, display: 'flex', alignItems: 'center', justifyContent: 'center'
+      }}>
+        <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: 'white', boxShadow: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#333' }}>
+          ◂▸
+        </Box>
+      </Box>
+      <Box sx={{ position: 'absolute', bottom: 12, left: 12, bgcolor: 'rgba(0,0,0,0.6)', color: 'white', px: 1.5, py: 0.5, borderRadius: 1, zIndex: 11, pointerEvents: 'none' }}>
+        <Typography variant="caption" fontWeight="bold">Before</Typography>
+      </Box>
+      <Box sx={{ position: 'absolute', bottom: 12, right: 12, bgcolor: 'rgba(0,0,0,0.6)', color: 'white', px: 1.5, py: 0.5, borderRadius: 1, zIndex: 11, pointerEvents: 'none' }}>
+        <Typography variant="caption" fontWeight="bold">After</Typography>
+      </Box>
+    </Box>
+  );
+};
+
 const IssueDetails = () => {
   const { id } = useParams();
   const [issue, setIssue] = useState(null);
@@ -37,6 +76,7 @@ const IssueDetails = () => {
   const [copySuccess, setCopySuccess] = useState("");
   const [locationError, setLocationError] = useState("");
   const [distance, setDistance] = useState(null);
+  const [timeLeft, setTimeLeft] = useState("");
 
   const navigate = useNavigate();
 
@@ -55,6 +95,34 @@ const IssueDetails = () => {
   useEffect(() => {
     fetchIssue();
   }, [id]);
+
+  useEffect(() => {
+    if (!issue || !issue.slaDeadline) return;
+    
+    const interval = setInterval(() => {
+      setTimeLeft(getTimeLeft(issue.slaDeadline));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [issue?.slaDeadline]);
+
+
+  const getTimeLeft = (deadline) => {
+    const now = new Date();
+    const diff = new Date(deadline) - now;
+
+    if (diff <= 0) {
+      const delay = Math.abs(diff);
+      const h = Math.floor(delay / (1000 * 60 * 60));
+      const m = Math.floor((delay / (1000 * 60)) % 60);
+      return `⚠️ Delayed by ${h}h ${m}m`;
+    }
+
+    const h = Math.floor(diff / (1000 * 60 * 60));
+    const m = Math.floor((diff / (1000 * 60)) % 60);
+
+    return `⏳ ${h}h ${m}m left`;
+  };
 
   const parseLocationData = (locationString) => {
     try {
@@ -260,28 +328,47 @@ const IssueDetails = () => {
             </Card>
 
             {/* Image Card */}
-            {issue.image && (
+            {(issue.image || issue.proofImage) && (
               <Card sx={{ p: 3, borderRadius: 3, boxShadow: 2 }}>
                 <Typography variant="h5" fontWeight="bold" gutterBottom>
-                  Attached Image
+                  {issue.image && issue.proofImage ? "Before vs After" : "Attached Image"}
                 </Typography>
-                <Box
-                  component="img"
-                  src={issue.image}
-                  alt="Issue"
-                  sx={{
-                    width: "100%",
-                    borderRadius: 2,
-                    maxHeight: 400,
-                    objectFit: "cover",
-                    cursor: "pointer",
-                    transition: 'transform 0.2s',
-                    '&:hover': {
-                      transform: 'scale(1.02)',
-                    }
-                  }}
-                  onClick={() => window.open(issue.image, "_blank")}
-                />
+
+                {issue.image && issue.proofImage && (
+                  <Chip
+                    label="Verified Resolution with Proof"
+                    color="success"
+                    size="small"
+                    sx={{ mb: 2 }}
+                  />
+                )}
+
+                {issue.image && issue.proofImage ? (
+                  <Box sx={{ width: "100%", borderRadius: 2, overflow: "hidden", border: '1px solid #e0e0e0' }}>
+                    <BeforeAfterSlider
+                      beforeImage={issue.image}
+                      afterImage={issue.proofImage}
+                    />
+                  </Box>
+                ) : (
+                  <Box
+                    component="img"
+                    src={issue.image || issue.proofImage}
+                    alt="Issue"
+                    sx={{
+                      width: "100%",
+                      borderRadius: 2,
+                      maxHeight: 400,
+                      objectFit: "cover",
+                      cursor: "pointer",
+                      transition: 'transform 0.2s',
+                      '&:hover': {
+                        transform: 'scale(1.02)',
+                      }
+                    }}
+                    onClick={() => window.open(issue.image || issue.proofImage, "_blank")}
+                  />
+                )}
               </Card>
             )}
           </Stack>
@@ -409,6 +496,23 @@ const IssueDetails = () => {
           </Alert>
         )}
       </Box>
+
+      <div className="mt-2 p-3 rounded-lg bg-gray-100">
+        <p><b>⏱ Deadline:</b> {new Date(issue.slaDeadline).toLocaleString()}</p>
+
+        {issue.isDelayed ? (
+          <p className="text-red-600 font-semibold">
+            ⚠️ Delayed
+          </p>
+        ) : (
+          <p className="text-green-600">
+            ✅ Within SLA
+          </p>
+        )}
+      </div>
+
+      <p className="font-semibold">{timeLeft}</p>
+
     </Container>
   );
 };
