@@ -5,7 +5,7 @@ import cloudinary from "./cloudinary.js";
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: "civic-issues", 
+    folder: "civic-issues",
     allowed_formats: ["jpg", "png", "jpeg"],
   },
 });

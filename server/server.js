@@ -7,6 +7,9 @@ import connectDB from "./config/db.js";
 import userRouter from "./routes/userRouter.js";
 import issueRouter from "./routes/issueRouter.js";
 import AdminRouter from "./routes/adminRouter.js";
+import { startEscalationJob } from "./services/escalationService.js";
+
+
 
 
 const app = express();
@@ -34,7 +37,7 @@ app.use('/api/user', userRouter);
 app.use('/api/admin', AdminRouter);
 app.use('/api/user', issueRouter);
 
-
+startEscalationJob();
 
 
 

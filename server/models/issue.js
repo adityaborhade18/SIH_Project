@@ -56,6 +56,42 @@ const issueSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    likes: {
+      type: Number,
+      default: 0,
+    },
+
+    likedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      }
+    ],
+
+    escalationLevel: {
+      type: Number,
+      default: 0,
+    },
+
+    priorityScore: {
+      type: Number,
+      default: 0,
+    },
+
+    area: {
+      type: String,
+    },
+    proofImage: {
+      type: String
+    },
+    slaDeadline: {
+      type: Date
+    },
+    isDelayed: {
+      type: Boolean,
+      default: false
+    }
+
   },
   { timestamps: true }
 );
