@@ -16,7 +16,7 @@ const app = express();
 
 const PORT = process.env.PORT || 5000;
 
-const allowedOrigin = ['http://localhost:3000']
+const allowedOrigin = ['http://localhost:3000', 'https://sih-project-lilac-omega.vercel.app/']
 
 // Connect to Database
 connectDB();
