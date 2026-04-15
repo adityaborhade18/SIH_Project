@@ -11,8 +11,11 @@ import {
   FormControl,
   InputLabel,
   Avatar,
+  Chip,
   Card,
   CardContent,
+  IconButton,
+  Tooltip,
   Button,
   Dialog,
   DialogTitle,
@@ -38,6 +41,9 @@ import {
   Search,
   Assignment,
   Send,
+  BarChart as BarChartIcon,
+  Map as MapIcon,
+  Assessment,
   People,
   WaterDrop
 } from '@mui/icons-material';
@@ -61,7 +67,12 @@ const statusColors = {
   'Rejected': '#f44336'
 };
 
-
+const priorityColors = {
+  'Low': '#4caf50',
+  'Medium': '#ffc107',
+  'High': '#ff9800',
+  'Critical': '#f44336'
+};
 
 // Water-specific map issues
 const waterMapIssues = [
@@ -199,7 +210,7 @@ const WaterDashboard = ({ onLogout }) => {
   const [showIssueDetails, setShowIssueDetails] = useState(false);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [message, setMessage] = useState('');
-  const [, setMessageType] = useState('email');
+  const [messageType, setMessageType] = useState('email');
 
   const handleStatusChange = async (id, newStatus) => {
     const success = await updateIssueStatus(id, newStatus);
@@ -237,7 +248,9 @@ const WaterDashboard = ({ onLogout }) => {
     setSnackbar({ open: true, message, severity });
   };
 
-
+  const handleRowSelection = (newSelection) => {
+    setSelectedIssues(newSelection);
+  };
 
   const handleFilterChange = (filterName, value) => {
     setFilters(prev => ({

@@ -1,5 +1,5 @@
 import React from "react";
-import { MapPin, Bell, ShieldCheck, BarChart3 } from "lucide-react";
+import { CheckCircle, MapPin, Bell, ShieldCheck, BarChart3 } from "lucide-react";
 
 export default function About() {
     return (
