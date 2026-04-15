@@ -14,7 +14,7 @@ export default function Contact() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // API call or email integration can be added here
+
         console.log(formData);
         setFormData({ name: "", email: "", message: "" });
     };
