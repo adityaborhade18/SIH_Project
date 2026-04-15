@@ -4,9 +4,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import AuthLayout from '../components/auth/AuthLayout';
 import EmailIcon from '@mui/icons-material/Email';
-import { useTheme } from '@mui/material/styles';
 import {
-  Box,
   Typography,
   TextField,
   Button,
@@ -17,7 +15,6 @@ import {
 } from '@mui/material';
 
 const ForgotPassword = () => {
-  const theme = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');

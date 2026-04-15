@@ -10,7 +10,6 @@ import ReportIssue from './pages/ReportIssue';
 import IssueTracker from './pages/IssueTracker';
 import IssueDetails from './pages/IssueDetails';
 import ForgotPassword from './pages/ForgotPassword';
-import AdminDashboard from './pages/admin/Dashboard';
 import UserPage from './pages/UserPage';
 import Loginn from './pages/loginn';
 import About from './pages/About';
@@ -19,11 +18,6 @@ import Contact from './pages/Contact';
 // Components
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
-import SanitationDashboard from './pages/admin/sanitation';
-import Publichealth from './pages/admin/publichealth';
-import RoaddepartmentDashboard from './pages/admin/roads';
-import Waterdepartment from './pages/admin/water';
-import Electricitydepartment from './pages/admin/electricity';
 import AdminLogin from './pages/admin/AdminLogin';
 import MapView from './pages/MapView';
 
